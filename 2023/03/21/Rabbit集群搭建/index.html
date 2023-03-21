@@ -13,7 +13,7 @@
 
 
 
-<title>Netty源码编译 | under-tow &#39;s Blog</title>
+<title>RabbitMQ集群搭建 | under-tow &#39;s Blog</title>
 
 
 
@@ -196,7 +196,7 @@
     
     <article class="post-wrap">
         <header class="post-header">
-            <h1 class="post-title">Netty源码编译</h1>
+            <h1 class="post-title">RabbitMQ集群搭建</h1>
             
                 <div class="post-meta">
                     
@@ -205,7 +205,7 @@
 
                     
                         <span class="post-time">
-                        Date: <a href="#">March 17, 2023&nbsp;&nbsp;15:28:19</a>
+                        Date: <a href="#">March 21, 2023&nbsp;&nbsp;18:12:16</a>
                         </span>
                     
                     
@@ -214,16 +214,17 @@
         </header>
 
         <div class="post-content">
-            <h2 id="Netty"><a href="#Netty" class="headerlink" title="Netty"></a>Netty</h2><p>源码编译</p>
+            <h1 id="RabbitMQ集群搭建"><a href="#RabbitMQ集群搭建" class="headerlink" title="RabbitMQ集群搭建"></a>RabbitMQ集群搭建</h1><p>RabbitMQ部署模式有三种</p>
 <ul>
-<li><p>设置JDK1.8</p>
-</li>
-<li><pre><code>cd common
-mvn clean compile  -D&quot;checkstyle.skip&quot;=true
-</code></pre>
-</li>
+<li>单机模式</li>
+<li>普通集群</li>
+<li>镜像集群（普通集群基础上配置策略）</li>
 </ul>
-
+<p>使用docker搭建</p>
+<blockquote>
+<p>docker run 参数解释<br><code>--hostname</code>， 指定容器的主机名<br><code>--name</code>， 指定容器名字，后续可以通过名字进行容器管理，links特性需要使用名字<br><code>-p</code>， 指定容器暴露的端口<br><code>-v, --volume=[]</code>， 给容器挂载存储卷，挂载到容器的某个目录<br><code>-e, --env=[]</code>， 指定环境变量，容器中可以使用该环境变量</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 拉取最新镜像</span></span><br><span class="line">docker pull rabbitmq</span><br><span class="line"></span><br><span class="line"><span class="comment"># 启动三个容器 这里的RABBITMQ_ERLANG_COOKIE必须一致（erlang集群要求）</span></span><br><span class="line">docker run -d --hostname rabbitmq01 --name rabbitmq01 -p 15672:15672 -p 5672:5672  -e RABBITMQ_ERLANG_COOKIE=<span class="string">&#x27;rabbitmqCookie&#x27;</span> rabbitmq</span><br><span class="line"></span><br><span class="line">docker run -d --hostname rabbitmq02 --name rabbitmq02 -p 15673:15672 -p 5673:5672  -e RABBITMQ_ERLANG_COOKIE=<span class="string">&#x27;rabbitmqCookie&#x27;</span> --<span class="built_in">link</span> rabbitmq01 rabbitmq</span><br><span class="line"></span><br><span class="line">docker run -d --hostname rabbitmq03 --name rabbitmq03 -p 15674:15672 -p 5674:5672  -e RABBITMQ_ERLANG_COOKIE=<span class="string">&#x27;rabbitmqCookie&#x27;</span> --<span class="built_in">link</span> rabbitmq01 --<span class="built_in">link</span> rabbitmq02  rabbitmq</span><br><span class="line"></span><br><span class="line"><span class="comment"># 进入rabbitmq01 容器开启管理插件 (ctrl + P + Q 退出) </span></span><br><span class="line">docker <span class="built_in">exec</span> -it rabbitmq01 bash</span><br><span class="line"><span class="built_in">cd</span> plugins</span><br><span class="line">rabbitmq-plugins <span class="built_in">enable</span> rabbitmq_management</span><br><span class="line"></span><br><span class="line"><span class="comment"># 进入rabbitmq02 容器开启管理插件 (ctrl + P + Q 退出) </span></span><br><span class="line">docker <span class="built_in">exec</span> -it rabbitmq02 bash</span><br><span class="line"><span class="built_in">cd</span> plugins</span><br><span class="line">rabbitmq-plugins <span class="built_in">enable</span> rabbitmq_management</span><br><span class="line"></span><br><span class="line"><span class="comment"># 进入rabbitmq03 容器开启管理插件 (ctrl + P + Q 退出) </span></span><br><span class="line">docker <span class="built_in">exec</span> -it rabbitmq03 bash</span><br><span class="line"><span class="built_in">cd</span> plugins</span><br><span class="line">rabbitmq-plugins <span class="built_in">enable</span> rabbitmq_management</span><br><span class="line"></span><br></pre></td></tr></table></figure>
         </div>
 
         
@@ -237,7 +238,7 @@ mvn clean compile  -D&quot;checkstyle.skip&quot;=true
                 
                     <p class="copyright-item">
                         <span>Permalink:</span>
-                        <span><a href="https://under-tow.github.io/2023/03/17/Netty/">https://under-tow.github.io/2023/03/17/Netty/</a></span>
+                        <span><a href="https://under-tow.github.io/2023/03/21/Rabbit%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">https://under-tow.github.io/2023/03/21/Rabbit%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/</a></span>
                     </p>
                 
                 
@@ -261,7 +262,7 @@ mvn clean compile  -D&quot;checkstyle.skip&quot;=true
                 <span class="tag">
                     
                     
-                        <a href="/tags/NIO/"># NIO</a>
+                        <a href="/tags/MQ/"># MQ</a>
                     
                         
                 </span>
@@ -274,10 +275,8 @@ mvn clean compile  -D&quot;checkstyle.skip&quot;=true
         </section>
         <section class="post-nav">
             
-                <a class="prev" rel="prev" href="/2023/03/21/Rabbit%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">RabbitMQ集群搭建</a>
             
-            
-            <a class="next" rel="next" href="/2023/03/17/hello-world/">Hello World</a>
+            <a class="next" rel="next" href="/2023/03/17/Netty/">Netty源码编译</a>
             
         </section>
 
