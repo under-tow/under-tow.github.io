@@ -14,18 +14,20 @@
 
 
 <link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"blog.under2.cn","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+    var CONFIG = {"hostname":"blog.under2.cn","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="ElasticSearch 版本 ElasticSearch 7.6.1 讲解初级阶段 ELK的 E 和 K  Why？为什么要用ElasticSearch 原来SQL实现模糊查询时%xxx%，如果是大数据，就十分慢！可以使用索引！ ElasticSearchL：就是用来做搜索的！（百度、Github、淘宝电商） Lucene是一套信息检索工具包！jar包不包含所所引起系统！ 包含的：索引结构！读">
+  <meta name="description" content="ElasticSearch 版本 ElasticSearch 7.6.1 讲解初级阶段 ELK的 E 和 K  Why？">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ElasticSearch（入门篇）">
 <meta property="og:url" content="http://blog.under2.cn/2021/01/24/ElasticSearch%EF%BC%88%E5%85%A5%E9%97%A8%E7%AF%87%EF%BC%89-elasticsearch%E5%85%A5%E9%97%A8%E7%AF%87/index.html">
-<meta property="og:site_name" content="undertow &#39;s blog">
-<meta property="og:description" content="ElasticSearch 版本 ElasticSearch 7.6.1 讲解初级阶段 ELK的 E 和 K  Why？为什么要用ElasticSearch 原来SQL实现模糊查询时%xxx%，如果是大数据，就十分慢！可以使用索引！ ElasticSearchL：就是用来做搜索的！（百度、Github、淘宝电商） Lucene是一套信息检索工具包！jar包不包含所所引起系统！ 包含的：索引结构！读">
+<meta property="og:site_name" content="BLOG">
+<meta property="og:description" content="ElasticSearch 版本 ElasticSearch 7.6.1 讲解初级阶段 ELK的 E 和 K  Why？">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://gitee.com/hopestation/typora/raw/master/images/202101/24/223128-12019.png">
 <meta property="og:image" content="https://gitee.com/hopestation/typora/raw/master/images/202101/24/223756-984547.png">
@@ -65,7 +67,7 @@
   };
 </script>
 
-  <title>ElasticSearch（入门篇） | undertow 's blog</title>
+  <title>ElasticSearch（入门篇） | BLOG</title>
   
 
 
@@ -96,7 +98,7 @@
   </style>
 </noscript>
 
-<link rel="alternate" href="/atom.xml" title="undertow 's blog" type="application/atom+xml">
+<link rel="alternate" href="/atom.xml" title="BLOG" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -121,13 +123,14 @@
 
     <a href="/" class="brand" rel="start">
       <span class="logo-line-before"><i></i></span>
-      <h1 class="site-title">undertow 's blog</h1>
+      <h1 class="site-title">BLOG</h1>
       <span class="logo-line-after"><i></i></span>
     </a>
   </div>
 
   <div class="site-nav-right">
     <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
     </div>
   </div>
 </div>
@@ -142,16 +145,53 @@
     <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
 
   </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
         <li class="menu-item menu-item-archives">
 
     <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
 
   </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
   </ul>
 </nav>
 
 
 
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
 
 </div>
     </header>
@@ -184,7 +224,7 @@
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="undertow 's blog">
+      <meta itemprop="name" content="BLOG">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -518,16 +558,18 @@
           <a href="/archives/">
         
           <span class="site-state-item-count">80</span>
-          <span class="site-state-item-name">日志</span>
+          <span class="site-state-item-name">文章</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
+          
         <span class="site-state-item-count">19</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
+          
         <span class="site-state-item-count">40</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
@@ -561,7 +603,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">undertow</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
   </div>
 
 
@@ -621,6 +663,10 @@
   
 
 
+
+
+  
+<script src="/js/local-search.js"></script>
 
 
 
