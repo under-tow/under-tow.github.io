@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.under2.cn","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Typora是我们比较熟悉的编辑器了，但是默认图片是保存在本地的。当我们复制文件到其他电脑上时，就发现图片都不见了。那如何把我们的图片自动上传到云端呢？  我使用的是这个开源项目：https:&#x2F;&#x2F;github.com&#x2F;Thobian&#x2F;typora-plugins-win-img 它支持  自建的服务器 腾讯云的COS 阿里云OSS· 七牛云 github 默认上传到github gitee码云">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Typora自动上传图片">
+<meta property="og:url" content="http://blog.under2.cn/2021/01/23/Typora%E8%87%AA%E5%8A%A8%E4%B8%8A%E4%BC%A0%E5%9B%BE%E7%89%87-typora%E8%87%AA%E5%8A%A8%E4%B8%8A%E4%BC%A0%E5%9B%BE%E7%89%87/index.html">
+<meta property="og:site_name" content="undertow &#39;s blog">
+<meta property="og:description" content="Typora是我们比较熟悉的编辑器了，但是默认图片是保存在本地的。当我们复制文件到其他电脑上时，就发现图片都不见了。那如何把我们的图片自动上传到云端呢？  我使用的是这个开源项目：https:&#x2F;&#x2F;github.com&#x2F;Thobian&#x2F;typora-plugins-win-img 它支持  自建的服务器 腾讯云的COS 阿里云OSS· 七牛云 github 默认上传到github gitee码云">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/hopestation/typora/raw/master/images/202101/23/003256-842782.png">
+<meta property="og:image" content="https://gitee.com/hopestation/typora/raw/master/images/202101/23/004528-822676.png">
+<meta property="og:image" content="https://gitee.com/hopestation/typora/raw/master/images/202101/23/005027-266670.png">
+<meta property="article:published_time" content="2021-01-22T17:05:00.951Z">
+<meta property="article:modified_time" content="2022-09-22T14:47:20.842Z">
+<meta property="article:author" content="undertow">
+<meta property="article:tag" content="typora">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/hopestation/typora/raw/master/images/202101/23/003256-842782.png">
+
+<link rel="canonical" href="http://blog.under2.cn/2021/01/23/Typora%E8%87%AA%E5%8A%A8%E4%B8%8A%E4%BC%A0%E5%9B%BE%E7%89%87-typora%E8%87%AA%E5%8A%A8%E4%B8%8A%E4%BC%A0%E5%9B%BE%E7%89%87/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Typora自动上传图片 | undertow 's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="undertow 's blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <!-- 自定义右上角 github -->
+    <a target="_blank" rel="noopener" href="https://github.com/under-tow" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <!-- 自定义右上角 github -->
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">undertow 's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.under2.cn/2021/01/23/Typora%E8%87%AA%E5%8A%A8%E4%B8%8A%E4%BC%A0%E5%9B%BE%E7%89%87-typora%E8%87%AA%E5%8A%A8%E4%B8%8A%E4%BC%A0%E5%9B%BE%E7%89%87/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="undertow">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="undertow 's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Typora自动上传图片
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-01-23 01:05:00" itemprop="dateCreated datePublished" datetime="2021-01-23T01:05:00+08:00">2021-01-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-09-22 22:47:20" itemprop="dateModified" datetime="2022-09-22T22:47:20+08:00">2022-09-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%9A%8F%E7%AC%94/" itemprop="url" rel="index"><span itemprop="name">随笔</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%9A%8F%E7%AC%94/%E5%B7%A5%E5%85%B7/" itemprop="url" rel="index"><span itemprop="name">工具</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>Typora是我们比较熟悉的编辑器了，但是默认图片是保存在本地的。<br>当我们复制文件到其他电脑上时，就发现图片都不见了。<br>那如何把我们的图片自动上传到云端呢？</p>
+</blockquote>
+<p>我使用的是这个开源项目：<a target="_blank" rel="noopener" href="https://github.com/Thobian/typora-plugins-win-img">https://github.com/Thobian/typora-plugins-win-img</a></p>
+<p>它支持</p>
+<ul>
+<li>自建的服务器</li>
+<li>腾讯云的COS</li>
+<li>阿里云OSS·</li>
+<li>七牛云</li>
+<li>github 默认上传到github</li>
+<li>gitee码云</li>
+</ul>
+<hr>
+<h3 id="安装教程环境说明："><a href="#安装教程环境说明：" class="headerlink" title="安装教程环境说明："></a><strong>安装教程环境说明：</strong></h3><ul>
+<li>typora版本：0.9.68 (Windows x86) （<a target="_blank" rel="noopener" href="https://typora.io/windows/typora-update-ia32-0320.exe">去下载</a>）</li>
+<li>typora默认安装目录：<code>C:\Program Files (x86)\Typora</code> ，可以安装在其他目录</li>
+</ul>
+<h3 id="如何安装？"><a href="#如何安装？" class="headerlink" title="如何安装？"></a>如何安装？</h3><p>首先下载刚刚的开源项目，解压</p>
+<p><strong>然后只需三步</strong></p>
+<ul>
+<li>粘贴<code>plugins</code>文件</li>
+<li>修改你原来的<code>window.html</code>文件</li>
+<li>修改<code>plugins</code>中的<code>upload.js</code>文件</li>
+</ul>
+<p>一步一步来：</p>
+<p>1 先把<code>plugins</code>文件复制到你的安装目录里的<code>Typora\resources\app</code></p>
+<p><img src="https://gitee.com/hopestation/typora/raw/master/images/202101/23/003256-842782.png" alt="image-20210123003225181"></p>
+<p>2 修改<strong>你自己的</strong><code>window.html</code>【注意不是替换，相当于下载的压缩包里的<code>window.html</code>没啥用..】</p>
+<p>打开，然后搜索</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;./app/window/frame.js&quot;</span> <span class="attr">defer</span>=<span class="string">&quot;defer&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>在后面加上这一句话就好了【目的是为了引入upload.js文件】</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;./plugins/image/upload.js&quot;</span> <span class="attr">defer</span>=<span class="string">&quot;defer&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>3 修改<code>upload.js</code>文件 【按照说明填写就好了】</p>
+<p><img src="https://gitee.com/hopestation/typora/raw/master/images/202101/23/004528-822676.png" alt="image-20210123004528592"></p>
+<p>根据你的需求填写<code>target</code></p>
+<p><img src="https://gitee.com/hopestation/typora/raw/master/images/202101/23/005027-266670.png" alt="image-20210123005026542"></p>
+<p>然后修改下面的JS就好了！【我是用的码云，你们根据需求修改对应的js】</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ！！！注意当图片大于1M时， gitee 必须登录后才能查看！！！</span></span><br><span class="line">$.image.<span class="title function_">init</span>(&#123;</span><br><span class="line">    <span class="attr">target</span>:<span class="string">&#x27;gitee&#x27;</span>,</span><br><span class="line">    <span class="attr">gitee</span>: &#123;</span><br><span class="line">            <span class="attr">message</span>: <span class="string">&quot;From:https://github.com/Thobian&quot;</span>,     <span class="comment">// 必须参数,提交消息（默认为：add image）</span></span><br><span class="line">            <span class="attr">branch</span>: <span class="string">&quot;master&quot;</span>,                               <span class="comment">// 要提交到的分支（默认为：master）</span></span><br><span class="line">            <span class="attr">token</span>: <span class="string">&#x27;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&#x27;</span>,   <span class="comment">// 码云token申请地址 https://gitee.com/profile/personal_access_tokens</span></span><br><span class="line">            <span class="attr">userName</span>: <span class="string">&#x27;userName&#x27;</span>,                           <span class="comment">// 用户名 比如你的gitee个人主页地址是：https://gitee.com/thobian ，那userName就是：thobian</span></span><br><span class="line">            <span class="attr">repositorie</span>: <span class="string">&#x27;repositorie&#x27;</span>,                     <span class="comment">// 仓库名 比如你的gitee图片仓库地址是：https://gitee.com/thobian/typora，那么repositorie就是 typora</span></span><br><span class="line">            <span class="title class_">Folder</span>: <span class="string">&#x27;image&#x27;</span>,                                <span class="comment">// 可以把上传的图片都放到这个指定的文件夹下</span></span><br><span class="line">            <span class="title class_">BucketDomain</span>: <span class="string">&#x27;https://gitee.com/api/v5/repos/&#x27;</span>,<span class="comment">// 这个是不用变的，直接copy就好</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+
+
+<blockquote>
+<p>比如Gitee，你可以专门建一个仓库来保存图片，注意仓库需要是<strong>公开</strong>的</p>
+<p>假如仓库是私密的，会出现typora上传成功，但是无法查看的情况。</p>
+</blockquote>
+<p>最后重启Typora，粘贴一个图片试试，搞定！</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/typora/" rel="tag"># typora</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/01/14/Redis%E8%A1%A5%E5%85%85%EF%BC%88%E5%86%85%E5%AD%98%E6%B7%98%E6%B1%B0%E7%AD%96%E7%95%A5%EF%BC%89-redis%E8%A1%A5%E5%85%85%E5%86%85%E5%AD%98%E6%B7%98%E6%B1%B0%E7%AD%96%E7%95%A5/" rel="prev" title="Redis补充（内存淘汰策略）">
+      <i class="fa fa-chevron-left"></i> Redis补充（内存淘汰策略）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/01/24/ElasticSearch%EF%BC%88%E5%85%A5%E9%97%A8%E7%AF%87%EF%BC%89-elasticsearch%E5%85%A5%E9%97%A8%E7%AF%87/" rel="next" title="ElasticSearch（入门篇）">
+      ElasticSearch（入门篇） <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B%E7%8E%AF%E5%A2%83%E8%AF%B4%E6%98%8E%EF%BC%9A"><span class="nav-number">1.</span> <span class="nav-text">安装教程环境说明：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%AE%89%E8%A3%85%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">如何安装？</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="undertow"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">undertow</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">80</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">undertow</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

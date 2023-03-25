@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.under2.cn","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="本文出处：https:&#x2F;&#x2F;blog.csdn.net&#x2F;weixin_50666791&#x2F;article&#x2F;details&#x2F;108475400也可以看看这篇文章：https:&#x2F;&#x2F;www.cnblogs.com&#x2F;wyq178&#x2F;p&#x2F;11576065.html  [TOC] 前言本文基于MySQL5.7版本。 前面几篇MySQL系列的文章介绍了索引，事务和锁相关知识，那么今天就让我们来看看当我们执行一条se">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MYSQL执行过程（转）">
+<meta property="og:url" content="http://blog.under2.cn/2021/01/14/MYSQL%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B%EF%BC%88%E8%BD%AC%EF%BC%89-mysql%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B%E8%BD%AC/index.html">
+<meta property="og:site_name" content="undertow &#39;s blog">
+<meta property="og:description" content="本文出处：https:&#x2F;&#x2F;blog.csdn.net&#x2F;weixin_50666791&#x2F;article&#x2F;details&#x2F;108475400也可以看看这篇文章：https:&#x2F;&#x2F;www.cnblogs.com&#x2F;wyq178&#x2F;p&#x2F;11576065.html  [TOC] 前言本文基于MySQL5.7版本。 前面几篇MySQL系列的文章介绍了索引，事务和锁相关知识，那么今天就让我们来看看当我们执行一条se">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wNi10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2E1N2E4ZjQ5NzMxMzQ0MzBhMWUzYjBkMzM3NWMzYTIw?x-oss-process=image/format,png">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wMy10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2IxZWUwZWViZmI5ODQ2OWY4OGRiMmU5NWZjZGRlYzA5?x-oss-process=image/format,png">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wNi10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2Q3N2U1ODRmZDAzMjRhOWI5NzNkZWQxMWQ4MDE5ZGRm?x-oss-process=image/format,png">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wMS10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlLzhmM2QxOTUyZTA2YzRjODlhNzM5ZjkwN2ZhZTNiNTQy?x-oss-process=image/format,png">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wMS10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2EyZjkzNzcwMTYxMDRmMDU5MTkxMzY2ODYwYzBmN2Zj?x-oss-process=image/format,png">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wNi10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2E5ODdmNzlhYTQ4NjQzNGFhZTlhNTU4YTViZTRmMDhk?x-oss-process=image/format,png">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wNi10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2E5MWQ2N2Y0NzdkMTRkOWJhMjY3NmFlMTM2ZTFjNGMz?x-oss-process=image/format,png">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wNi10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2Y2YzcwY2VlMDkwYTQyOWJhZTRiMjZiODE0YjBjNTFl?x-oss-process=image/format,png">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wMy10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlLzgwNzIzMDMwY2UzMTQ1Yjk5ZTM2NGRhODhjYjU5N2Iz?x-oss-process=image/format,png">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wMy10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlLzQ5MDYxMDQ4NGU3NTQzZGQ5OTQzZGYwM2YzMzFlMzAz?x-oss-process=image/format,png">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wNi10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlLzdmMTZjMGUyMWFiYTRhZTc4YWIwZjViY2JmMzY2ZDdk?x-oss-process=image/format,png">
+<meta property="article:published_time" content="2021-01-14T14:58:36.007Z">
+<meta property="article:modified_time" content="2022-09-22T14:45:51.090Z">
+<meta property="article:author" content="undertow">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wNi10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2E1N2E4ZjQ5NzMxMzQ0MzBhMWUzYjBkMzM3NWMzYTIw?x-oss-process=image/format,png">
+
+<link rel="canonical" href="http://blog.under2.cn/2021/01/14/MYSQL%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B%EF%BC%88%E8%BD%AC%EF%BC%89-mysql%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B%E8%BD%AC/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>MYSQL执行过程（转） | undertow 's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="undertow 's blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <!-- 自定义右上角 github -->
+    <a target="_blank" rel="noopener" href="https://github.com/under-tow" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <!-- 自定义右上角 github -->
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">undertow 's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.under2.cn/2021/01/14/MYSQL%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B%EF%BC%88%E8%BD%AC%EF%BC%89-mysql%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B%E8%BD%AC/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="undertow">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="undertow 's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MYSQL执行过程（转）
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-01-14 22:58:36" itemprop="dateCreated datePublished" datetime="2021-01-14T22:58:36+08:00">2021-01-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-09-22 22:45:51" itemprop="dateModified" datetime="2022-09-22T22:45:51+08:00">2022-09-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MYSQL/" itemprop="url" rel="index"><span itemprop="name">MYSQL</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>本文出处：<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_50666791/article/details/108475400">https://blog.csdn.net/weixin_50666791/article/details/108475400</a><br>也可以看看这篇文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/wyq178/p/11576065.html">https://www.cnblogs.com/wyq178/p/11576065.html</a></p>
+</blockquote>
+<p>[TOC]</p>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>本文基于MySQL5.7版本。</p>
+<p>前面几篇MySQL系列的文章介绍了索引，事务和锁相关知识，那么今天就让我们来看看当我们执行一条select语句和一条update语句的时候,MySQL要经过哪些步骤，才能返回我们想要的数据。</p>
+<h1 id="一条select语句的执行流程"><a href="#一条select语句的执行流程" class="headerlink" title="一条select语句的执行流程"></a>一条select语句的执行流程</h1><p>MySQL从大方向来说，可以分为 Server 层和存储引擎层。而Server层包括连接器、查询缓存、解析器、预处理器、优化器、执行器等，最后Server层再通过API接口形式调用对应的存储引擎层提供的接口。如下图所示(图片来源于《高性能MySQL》)：</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wNi10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2E1N2E4ZjQ5NzMxMzQ0MzBhMWUzYjBkMzM3NWMzYTIw?x-oss-process=image/format,png" alt="详解一条查询select语句和更新update语句的执行流程"></p>
+<p>在这里插入图片描述</p>
+<p>根据流程图，一条select查询大致经过以下六个步骤：<br>1、客户端发起一个请求时，首先会建立一个连接<br>2、服务端会检查缓存，如果命中则直接返回，否则继续之后后面步骤<br>3、服务器端根据收到的sql语句进行解析，然后对其进行词法分析，语法分析以及预处理<br>4、由优化器生成执行计划<br>5、调用存储引擎层API来执行查询<br>6、返回查询到的结果</p>
+<p>查询流程也可以通过如下图表示(图片来源于丁奇MySQL45将)：</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wMy10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2IxZWUwZWViZmI5ODQ2OWY4OGRiMmU5NWZjZGRlYzA5?x-oss-process=image/format,png" alt="详解一条查询select语句和更新update语句的执行流程"></p>
+<p>在这里插入图片描述</p>
+<h1 id="建立连接"><a href="#建立连接" class="headerlink" title="建立连接"></a>建立连接</h1><p>第一步建立连接，这个很容易理解，需要特别指出的是MySQL服务端和客户端的通信方式采用的是<strong>半双工协议</strong>。</p>
+<p>通信方式主要可以分为三种：单工，半双工，全双工，如下图：</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wNi10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2Q3N2U1ODRmZDAzMjRhOWI5NzNkZWQxMWQ4MDE5ZGRm?x-oss-process=image/format,png" alt="详解一条查询select语句和更新update语句的执行流程"></p>
+<p>在这里插入图片描述</p>
+<ul>
+<li>单工：通信的时候，数据只能单向传输。比如说遥控器，我们只能用遥控器来控制电视机，而不能用电视机来控制遥控器。</li>
+<li>半双工：通信的时候，数据可以双向传输，但是同一时间只能有一台服务器在发送数据，当A给B发送数据的时候，那么B就不能给A发送数据，必须等到A发送结束之后，B才能给A发送数据。比如说对讲机。</li>
+<li>全双工：通信的时候，数据可以双向传输，并且可以同时传输。比如说我们打电话或者用通信软件进行语音和视频通话等。</li>
+</ul>
+<p>半双工协议让MySQL通信简单快速，但是也在一定程度上限制了MySQL的性能，因为一旦从一端开始发送数据，另一端必须要接收完全部数据才能做出响应。所以说我们批量插入的时候尽量拆分成多次插入而不要一次插入太大数据，同样的查询语句最好也带上limit限制条数，避免一次返回过多数据。</p>
+<p>MySQL单次传输数据包的大小可以通过参数max_allowed_packet控制,默认大小为4MB</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SHOW VARIABLES LIKE &#x27;max_allowed_packet&#x27;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wMS10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlLzhmM2QxOTUyZTA2YzRjODlhNzM5ZjkwN2ZhZTNiNTQy?x-oss-process=image/format,png" alt="详解一条查询select语句和更新update语句的执行流程"></p>
+<p>在这里插入图片描述</p>
+<h1 id="查询缓存"><a href="#查询缓存" class="headerlink" title="查询缓存"></a>查询缓存</h1><p>连接上了之后，如果缓存是打开的，那么就会进入查询缓存阶段，可以通过如下命令查看缓存是否开启：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SHOW VARIABLES LIKE &#x27;query_cache_type&#x27;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wMS10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2EyZjkzNzcwMTYxMDRmMDU5MTkxMzY2ODYwYzBmN2Zj?x-oss-process=image/format,png" alt="详解一条查询select语句和更新update语句的执行流程"></p>
+<p>在这里插入图片描述</p>
+<p>我们可以看到，缓存默认是关闭的。这是因为MySQL的缓存使用条件非常苛刻，是通过一个大小写敏感的哈希值去匹配的，这样就是说一条查询语句哪怕只是有一个空格不一致，都会导致无法使用缓存。而且一旦表里面有一行数据变动了，那么关于这种表的所有缓存都会失效。所以一般我们都是不建议使用缓存，MySQL最新的8.0版本已经将缓存模块去掉了。</p>
+<h1 id="解析器和预处理器"><a href="#解析器和预处理器" class="headerlink" title="解析器和预处理器"></a>解析器和预处理器</h1><p>跳过了缓存模块之后，查询语句会进入解析器进行解析。</p>
+<h1 id="词法解析和语法解析-Parser"><a href="#词法解析和语法解析-Parser" class="headerlink" title="词法解析和语法解析(Parser)"></a>词法解析和语法解析(Parser)</h1><p>这一步主要的工作就是检查sql语句的语法对不对，在这里，首先会把我们整个SQL语句打碎，比如：select name from test where id=1，就会被打散成select，name，from，test，where，id，=，1 这8个字符，并且能识别出关键字和非关键字，然后根据sql语句生成一个数据结构，也叫做解析树(select_lex)，如下图：</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wNi10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2E5ODdmNzlhYTQ4NjQzNGFhZTlhNTU4YTViZTRmMDhk?x-oss-process=image/format,png" alt="详解一条查询select语句和更新update语句的执行流程"></p>
+<p>在这里插入图片描述</p>
+<h1 id="预处理器-Preprocessor"><a href="#预处理器-Preprocessor" class="headerlink" title="预处理器(Preprocessor)"></a>预处理器(Preprocessor)</h1><p>经过了前面的词法和语法解析，那么至少我们一条sql语句的语法格式是满足要求了，接下来我们还需要做什么呢？自然是检查表名，列名以及其他一些信息等是不是真实存在的，<strong>预处理就是做一个表名和字段名等相关信息合法性的检测</strong>。</p>
+<h1 id="查询优化器-Query-Optimizer"><a href="#查询优化器-Query-Optimizer" class="headerlink" title="查询优化器(Query Optimizer)"></a>查询优化器(Query Optimizer)</h1><p>经过上面的步骤，到这里就得到了一句有效的sql语句了。而对一个查询语句，尤其是复杂的多表查询语句，我们可以有很多种执行方式，每种执行方式的效率也不一样，所以这时候就需要查询优化器去选择一种它认为最高效的执行方式。</p>
+<p>查询优化器的目的就是根据解析树生成不同的执行计划（Execution Plan），然后选择一种最优的执行计划，MySQL 里面使用的是基于开销（cost）的优化器，哪种执行计划开销最小，就选择哪种。</p>
+<p>我们可以通过变量Last_query_cost来查询开销：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM test;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">show status like &#x27;Last_query_cost&#x27;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wNi10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2E5MWQ2N2Y0NzdkMTRkOWJhMjY3NmFlMTM2ZTFjNGMz?x-oss-process=image/format,png" alt="详解一条查询select语句和更新update语句的执行流程"></p>
+<p>在这里插入图片描述</p>
+<p>上图中展示的结果就表示MySQL认为SELECT * FROM test 查询语句需要做至少2个数据页的随机查找才能完成上面的查询。<br>这个结果是通过一系列复杂的运算得到的，包括每个表或者索引的页面个数，索引的基数，索引和数据行的长度，索引分布的情况。</p>
+<p>优化器在评估成本的时候，不会考虑任何缓存的作用，而是假设读取任何数据都需要经过一次IO操作。</p>
+<h1 id="优化器可以做哪些优化"><a href="#优化器可以做哪些优化" class="headerlink" title="优化器可以做哪些优化"></a>优化器可以做哪些优化</h1><p>优化器可以替我们做很多优化，下面列举一些常用的优化：</p>
+<ul>
+<li>重新定义关联的顺序。优化器并不一定按照我们写的查询关联语句中的关联顺序，而是会按照优化后的顺序进行查询。</li>
+<li>将外连接转为为内连接。</li>
+<li>使用等价转换原则。比如a&lt;b and a=5会被转换为a=5 and b&gt;5</li>
+<li>优化COUNT(),MIN()和MAX()</li>
+<li>预估并转化为常数表达式</li>
+<li>覆盖索引扫描。想要详细了解覆盖索引的可以点击这里。</li>
+<li>的查询优化。</li>
+<li>提前终止查询。比如我们使用了一个不成立的条件，则会立刻返回空。</li>
+<li>等值传播。</li>
+<li>优化IN()语句。在其他很多数据库中in等同于or语句，但是MySQL中会讲in中的值先进行排序，然后按照二分查找的方法来确定是否满足条件。</li>
+</ul>
+<p>实际当中优化器能做的优化远远比上面列举的更多，所以有时候我们不要觉得比优化器更聪明，所以大部分情况下我们都可以让优化器做出优化就可以了，如果有些我们确定优化器没有选择最优的查询方案，我们也可以在查询中通过添加hint提示告知到优化器，比如通过force index强制使用索引或者straight_join语句强制优化器按我们想要的表顺序进行关联。</p>
+<h1 id="优化器并不是万能的"><a href="#优化器并不是万能的" class="headerlink" title="优化器并不是万能的"></a>优化器并不是万能的</h1><p>MySQL优化器也并不是万能的，并不是总能把我们写的糟糕的sql语句优化成一个高效的查询语句，而且也有很多种原因会导致优化器做出错误的选择：</p>
+<ul>
+<li>统计信息不准确。MySQL评估成本依赖于存储引擎提供的的统计信息，然而存储引擎提供的统计信息有时候会有较大偏差。</li>
+<li>执行计划的成本估算不等于实际的执行成本。比如估算成本的时候不考虑缓存，而实际执行有些数据在缓存中。</li>
+<li>优化器认为的最优可能并不是我们需要的最优。比如有时候我们想要时间最短，但是优化器</li>
+<li>优化器从不考虑其他并发的查询。</li>
+<li>优化器并不总是基本成本的优化。有时候也会基于规则，比如当存在全文索引，查询时使用了match()子句时，即使选择其他索引更优，优化器仍然会选择全文索引。</li>
+<li>优化器不将不受其控制的操作计算为成本。如执行存储过程或者用户自定义函数的成本。</li>
+<li>优化器有时候无法估算所有的执行计划，所以也有可能错过最优执行计划。</li>
+</ul>
+<h1 id="优化器如何得到查询计划"><a href="#优化器如何得到查询计划" class="headerlink" title="优化器如何得到查询计划"></a>优化器如何得到查询计划</h1><p>优化器听起来比较抽象，给人一种看不见摸不着的感觉，但是实际上我们也可以通过参数打开优化器追踪，优化器追踪默认是关闭的，因为开启后会影响性能，所以建议是在需要定位问题的时候开启，并及时关闭。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">SHOW VARIABLES LIKE &#x27;optimizer_trace&#x27;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">set optimizer_trace=&#x27;enabled=on&#x27;;</span><br></pre></td></tr></table></figure>
+
+<p>接下来执行一句查询语句：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT t1.name AS name1,t2.name AS name2 FROM test t1 INNER JOIN test2 t2 ON t1.id=t2.id</span><br></pre></td></tr></table></figure>
+
+<p>这时候优化器的分析过程已经被记录下来了，可以通过下面语句查询：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM information_schema.optimizer_trace;</span><br></pre></td></tr></table></figure>
+
+<p>得到如下结果：</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wNi10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlL2Y2YzcwY2VlMDkwYTQyOWJhZTRiMjZiODE0YjBjNTFl?x-oss-process=image/format,png" alt="详解一条查询select语句和更新update语句的执行流程"></p>
+<p>上面的图是为了看数据效果，如果需要自己操作的话，需要用shelll命令窗口去执行，sqlyog工具中直接查询出来TRACE列是空的，shell中返回的TRACE列信息如下：</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wMy10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlLzgwNzIzMDMwY2UzMTQ1Yjk5ZTM2NGRhODhjYjU5N2Iz?x-oss-process=image/format,png" alt="详解一条查询select语句和更新update语句的执行流程"></p>
+<p>从截图中的轮廓可以看出来这是一个json数据格式。</p>
+<p>跟踪信息主要分为以下三部分(上图并未将全部内容展示出来，感兴趣的可以自己去尝试一下，开启之后记得及时关闭哦)：</p>
+<ul>
+<li>准备阶段(join_preparation)：expanded_query中的查询语句就是优化后的sql</li>
+<li>优化阶段(join_optimization)：considered_execution_plans中列出来所有的执行计划</li>
+<li>执行阶段(join_execution)</li>
+</ul>
+<h1 id="存储引擎查询"><a href="#存储引擎查询" class="headerlink" title="存储引擎查询"></a>存储引擎查询</h1><p>当Server层得到了一条sql语句的执行计划后，这时候就会去调用存储引擎层对应的API，执行查询了。因为MySQL的存储引擎是插件式的，所以每种存储引擎都会对Server提供了一些对应的API调用。</p>
+<h1 id="返回结果"><a href="#返回结果" class="headerlink" title="返回结果"></a>返回结果</h1><p>最后，将查询出得到的结果返回Server层，如果开启了缓存，Server层返回数据的同时还会写入缓存。</p>
+<p>MySQL将查询结果返回是一个增量的逐步返回过程。例如：当我们处理完所有查询逻辑并开始执行查询并且生成第一条结果数据的时候，MySQL就可以开始逐步的向客户端传输数据了。这么做的好处是服务端无需存储太多结果，从而减少内存消耗(这个操作可以通过sql _buffer_result来提示优化器，和上文说的force index，straight_join一样都是人为强制优化器执行我们想要的操作)。</p>
+<h1 id="一条update语句的执行流程"><a href="#一条update语句的执行流程" class="headerlink" title="一条update语句的执行流程"></a>一条update语句的执行流程</h1><p>一条更新语句，其实是增，删，查的综合体，查询语句需要经过的流程，更新语句全部需要执行一次，因为更新之前必须要先拿到(查询)需要更新的数据。</p>
+<h1 id="Buffer-Pool"><a href="#Buffer-Pool" class="headerlink" title="Buffer Pool"></a>Buffer Pool</h1><p>InnnoDB的数据都是放在磁盘上的，而磁盘的速度和CPU的速度之间有难以逾越的鸿沟，为了提升效率，就引入了缓冲池技术，在InnoDB中称之为Buffer Pool。</p>
+<p>从磁盘中读取数据的时候，会先将从磁盘中读取到的页放在缓冲池中，这样下次读相同的页的时候，就可以直接从Buffer Pool中获取。</p>
+<p>更新数据的时候首先会看数据在不在缓冲池中，在的话就直接修改缓冲池中的数据，注意，<strong>前提是我们不需要对这条数据进行唯一性检查（因为如果要进行唯一性检查就必须加载磁盘中的数据来判断是否唯一了）</strong></p>
+<p>如果只修改了Buffer Pool中的数据而不修改磁盘中数据，这时候就会造成内存和磁盘中数据不一致，这种也叫做脏页。InnoDB 里面有专门的后台线程把 Buffer Pool 的数据写入到磁盘， 每隔一段时间就一次性地把多个修改写入磁盘，这个动作就叫做刷脏。</p>
+<p>那么现在有一个问题，假如我们更新都需要把数据写入数据磁盘，然后磁盘也要找到对应的那条记录，然后再更新，整个过程 IO 成本、查找成本都很高。为了解决这个问题，InnoDB就有了redo log,并且采用了Write-Ahead Logging(WAL)方案实现。</p>
+<h1 id="redo-log"><a href="#redo-log" class="headerlink" title="redo log"></a>redo log</h1><p>redo log，即重做日志，是InnoDB引擎所特有,主要用于崩溃修复(crash-safe)。</p>
+<h1 id="Write-Ahead-Logging（WAL）"><a href="#Write-Ahead-Logging（WAL）" class="headerlink" title="Write-Ahead Logging（WAL）"></a>Write-Ahead Logging（WAL）</h1><p>Write-Ahead Logging，即先写日志，也就是说我们执行一个操作的时候会先将操作写入日志，然后再写入数据磁盘，那么有人就会问了，写入数据表是磁盘操作，写入redo log也是磁盘操作，同样都是写入磁盘，为什么不直接写入数据，而要先写入日志呢？这不是多此一举吗？</p>
+<p>设想一下，假如我们所需要的数据是随机分散在不同页的不同扇区中，那么我们去找数据的时候就是随机IO操作，而redo log是循环写入的，也就是顺序IO。一句话：<br><strong>刷盘是随机 I/O，而记录日志是顺序 I/O，顺序 I/O 效率更高。因此先把修改写入日 志，可以延迟刷盘时机，进而提升系统吞吐</strong></p>
+<h1 id="redo-log是如何刷盘的"><a href="#redo-log是如何刷盘的" class="headerlink" title="redo log是如何刷盘的"></a>redo log是如何刷盘的</h1><p>InnoDB中的 redo log是固定大小的，也就是说redo log并不是随着文件写入慢慢变大，而是一开始就分配好了空间，空间一旦写满了，前面的空间就会被覆盖掉，刷盘的操作是通过Checkpoint实现的。如下图：</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wMy10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlLzQ5MDYxMDQ4NGU3NTQzZGQ5OTQzZGYwM2YzMzFlMzAz?x-oss-process=image/format,png" alt="详解一条查询select语句和更新update语句的执行流程"></p>
+<p>check point 是当前要覆盖的位置。write pos是当前写入日志的位置。写日志的时候是循环写的，覆盖旧记录前要把记录更新到数据文件。如果write pos和 check point 重叠，说明redo log 已经写满，这时候需要同步redo log刷到磁盘中。</p>
+<h1 id="bin-log"><a href="#bin-log" class="headerlink" title="bin log"></a>bin log</h1><p>MySQL整体来看，其实就有两块：一块是 Server 层，它主要做的是 MySQL功能层面的事情；还有一块是引擎层，负责存储相关的具体事宜。上面讲的redo log是InnoDB 引擎特有的日志，而Server 层也有自己的日志，称为 binlog（归档日志），也叫做二进制日志。</p>
+<p>可能有人会问，为什么会有两份日志呢？<br>因为最开始 MySQL 里并没有 InnoDB 引擎。MySQL 自带的引擎是 MyISAM，但是 MyISAM是不支持事物的，也没有崩溃恢复(crash-safe)的能力，binlog日志只能用于归档。那么既然InnoDB是需要支持事务的，那么就必须要有崩溃恢复(crash-safe)能力，所以就使用另外一套自己的日志系统，也就是基于redo log 来实现 crash-safe 能力。</p>
+<h1 id="bin-log和redo-log的区别"><a href="#bin-log和redo-log的区别" class="headerlink" title="bin log和redo log的区别"></a>bin log和redo log的区别</h1><p>1、redo log 是 InnoDB 引擎特有的；binlog 是 MySQL 的Server层实现的，所有引擎都可以使用。<br>2、redo log 是物理日志，记录的是“在某个数据页上做了什么修改”；binlog 是逻辑日志，记录的是这个语句的原始逻辑，比如“给id=2 这一行的c字段加 1 ”。<br>3、redo log 是循环写的，空间固定会用完；binlog 是可以追加写入的。“追加写”是指 binlog 文件写到一定大小后会切换到下一个，并不会覆盖以前的日志。</p>
+<h1 id="update语句的执行流程"><a href="#update语句的执行流程" class="headerlink" title="update语句的执行流程"></a>update语句的执行流程</h1><p>前面铺垫了这么多，主要是想让大家先理解redo log和big log这两个概念，因为更新操作离不开这两个文件，接下来我们正式回到正题，一条update语句到底是如何执行的，可以通过下图表示：</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9wNi10dC5ieXRlaW1nLmNvbS9vcmlnaW4vcGdjLWltYWdlLzdmMTZjMGUyMWFiYTRhZTc4YWIwZjViY2JmMzY2ZDdk?x-oss-process=image/format,png" alt="详解一条查询select语句和更新update语句的执行流程"></p>
+<p>上图可以大概概括为以下几步：<br>1、先根据更新语句的条件，查询出对应的记录，如果有缓存，也会用到缓存<br>2、Server端调用InnoDB引擎API接口，InnoDB引擎将这条数据写到内存，同时写入redo log，并将redo log状态设置为prepare<br>3、通知Server层，可以正式提交数据了<br>4、Server层收到通知后立刻写入bin log，然后调用InnoD对应接口发出commit请求<br>5、InnoDB收到commit请求后将数据设置为commit状态</p>
+<p>上面的步骤中，我们注意到，redo log会经过两次提交，这就是两阶段提交。</p>
+<h1 id="两阶段提交"><a href="#两阶段提交" class="headerlink" title="两阶段提交"></a>两阶段提交</h1><p>两阶段提交是分布式事务的设计思想，就是首先会有请求方发出请求到各个服务器，然后等其他各个服务器都准备好之后再通知请求方可以提交了，请求方收到请求后再发出指令，通知所有服务器一起提交。</p>
+<p>而我们这里redo log是属于存储引擎层的日志，bin log是属于Server层日志，属于两个独立的日志文件，采用两阶段提交就是为了使两个日志文件逻辑上保持一致</p>
+<h1 id="假如不采用两阶段提交法"><a href="#假如不采用两阶段提交法" class="headerlink" title="假如不采用两阶段提交法"></a>假如不采用两阶段提交法</h1><p>假如有一条语句id=1,age=18，我们现在要把这条数据的age更新为19：</p>
+<ul>
+<li>先写 redo log 后写 binlog<br>假设在redo log 写完，binlog还没有写完的时候，MySQL发生了宕机(crash)。重启后因为redo log写完了，所以会自动进行数据恢复，也就是age=19。但是由于binlog没写完就宕机( crash)了，这时候 binlog 里面就没有记录这个语句。因此，之后备份日志的时候，存起来的 binlog 里面就没有这条语句。然后某一天假如我们把数据丢失了，需要用bin log进行数据恢复就会发现少了这一次更新。</li>
+<li>先写binlog后写redo log<br>假如在binlog写完，redo log还没有写完的时候，MySQL发生了宕机(crash)。重启后因为redo log没写完，所以无法进行自动恢复，那么数据就还是age=18了，然后某一天假如我们把数据丢失了，需要用binlog进行恢复又会发现恢复出来的数据age=19了。</li>
+</ul>
+<p>通过以上的两个假设我们就会发现，假如不采用两阶段提交法就会出现数据不一致的情况，尤其是在有主从库的时候，因为主从复制是基于binlog实现的，如果redo log和bin log不一致，就会导致主从库数据不一致。</p>
+<h1 id="宕机后的数据恢复规则"><a href="#宕机后的数据恢复规则" class="headerlink" title="宕机后的数据恢复规则"></a>宕机后的数据恢复规则</h1><p>1、如果 redo log 里面的事务是完整的，也就是已经有了 commit 标识，则直接提交；<br>2、如果 redo log 里面的事物只有完整的 prepare，则判断对应的事务 binlog 是否存在并完整：如果是，则提交事务；否则，回滚事务。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>本文主要分析了select和update语句的执行过程，而在分析update语句执行过程中，又简单介绍了redo log和bin log相关概念，这一部分内容在本文中没有过多深入的讲解，仅仅只是为了让大家去理解更新流程而做了简单的介绍，像redo log和其对应的缓存之间的关系，redo log刷盘策略，bin log写入策略，有了bin log为何还需要redo log等等问题本文中并没有给出明确的解释，因为本文篇幅有限，深入之后就会涉及到InnoDB引擎的存储结构以及更底层的一些知识</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/01/08/Redis%E8%A1%A5%E5%85%85%EF%BC%88%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E4%BB%A5%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF%EF%BC%89-redis%E8%A1%A5%E5%85%85%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E4%BB%A5%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF/" rel="prev" title="Redis补充（数据类型以及使用场景）">
+      <i class="fa fa-chevron-left"></i> Redis补充（数据类型以及使用场景）
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/01/14/Redis%E7%B3%BB%E5%88%97%E7%9B%AE%E5%BD%95-redis%E7%B3%BB%E5%88%97%E7%9B%AE%E5%BD%95/" rel="next" title="Redis系列目录">
+      Redis系列目录 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E6%9D%A1select%E8%AF%AD%E5%8F%A5%E7%9A%84%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">一条select语句的执行流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BB%BA%E7%AB%8B%E8%BF%9E%E6%8E%A5"><span class="nav-number">3.</span> <span class="nav-text">建立连接</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9F%A5%E8%AF%A2%E7%BC%93%E5%AD%98"><span class="nav-number">4.</span> <span class="nav-text">查询缓存</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%A7%A3%E6%9E%90%E5%99%A8%E5%92%8C%E9%A2%84%E5%A4%84%E7%90%86%E5%99%A8"><span class="nav-number">5.</span> <span class="nav-text">解析器和预处理器</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AF%8D%E6%B3%95%E8%A7%A3%E6%9E%90%E5%92%8C%E8%AF%AD%E6%B3%95%E8%A7%A3%E6%9E%90-Parser"><span class="nav-number">6.</span> <span class="nav-text">词法解析和语法解析(Parser)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%A2%84%E5%A4%84%E7%90%86%E5%99%A8-Preprocessor"><span class="nav-number">7.</span> <span class="nav-text">预处理器(Preprocessor)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E5%99%A8-Query-Optimizer"><span class="nav-number">8.</span> <span class="nav-text">查询优化器(Query Optimizer)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BC%98%E5%8C%96%E5%99%A8%E5%8F%AF%E4%BB%A5%E5%81%9A%E5%93%AA%E4%BA%9B%E4%BC%98%E5%8C%96"><span class="nav-number">9.</span> <span class="nav-text">优化器可以做哪些优化</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BC%98%E5%8C%96%E5%99%A8%E5%B9%B6%E4%B8%8D%E6%98%AF%E4%B8%87%E8%83%BD%E7%9A%84"><span class="nav-number">10.</span> <span class="nav-text">优化器并不是万能的</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BC%98%E5%8C%96%E5%99%A8%E5%A6%82%E4%BD%95%E5%BE%97%E5%88%B0%E6%9F%A5%E8%AF%A2%E8%AE%A1%E5%88%92"><span class="nav-number">11.</span> <span class="nav-text">优化器如何得到查询计划</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E6%9F%A5%E8%AF%A2"><span class="nav-number">12.</span> <span class="nav-text">存储引擎查询</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%BF%94%E5%9B%9E%E7%BB%93%E6%9E%9C"><span class="nav-number">13.</span> <span class="nav-text">返回结果</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E6%9D%A1update%E8%AF%AD%E5%8F%A5%E7%9A%84%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="nav-number">14.</span> <span class="nav-text">一条update语句的执行流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Buffer-Pool"><span class="nav-number">15.</span> <span class="nav-text">Buffer Pool</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#redo-log"><span class="nav-number">16.</span> <span class="nav-text">redo log</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Write-Ahead-Logging%EF%BC%88WAL%EF%BC%89"><span class="nav-number">17.</span> <span class="nav-text">Write-Ahead Logging（WAL）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#redo-log%E6%98%AF%E5%A6%82%E4%BD%95%E5%88%B7%E7%9B%98%E7%9A%84"><span class="nav-number">18.</span> <span class="nav-text">redo log是如何刷盘的</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#bin-log"><span class="nav-number">19.</span> <span class="nav-text">bin log</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#bin-log%E5%92%8Credo-log%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">20.</span> <span class="nav-text">bin log和redo log的区别</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#update%E8%AF%AD%E5%8F%A5%E7%9A%84%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="nav-number">21.</span> <span class="nav-text">update语句的执行流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4"><span class="nav-number">22.</span> <span class="nav-text">两阶段提交</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%81%87%E5%A6%82%E4%B8%8D%E9%87%87%E7%94%A8%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4%E6%B3%95"><span class="nav-number">23.</span> <span class="nav-text">假如不采用两阶段提交法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%95%E6%9C%BA%E5%90%8E%E7%9A%84%E6%95%B0%E6%8D%AE%E6%81%A2%E5%A4%8D%E8%A7%84%E5%88%99"><span class="nav-number">24.</span> <span class="nav-text">宕机后的数据恢复规则</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">25.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="undertow"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">undertow</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">80</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">undertow</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

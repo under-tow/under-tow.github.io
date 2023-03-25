@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.under2.cn","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="本文转自： 作者：编程迷思 原文链接：https:&#x2F;&#x2F;www.cnblogs.com&#x2F;kismetv&#x2F;p&#x2F;9236731.html   实际操作还可以参考这一篇https:&#x2F;&#x2F;blog.csdn.net&#x2F;qq_39669058&#x2F;article&#x2F;details&#x2F;87720731 其他参考文章https:&#x2F;&#x2F;www.cnblogs.com&#x2F;daofaziran&#x2F;p&#x2F;10978628.html   目">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis主从复制详解 （转）">
+<meta property="og:url" content="http://blog.under2.cn/2020/10/28/Redis%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E8%AF%A6%E8%A7%A3%20%EF%BC%88%E8%BD%AC%EF%BC%89-redis%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E8%AF%A6%E8%A7%A3%E8%BD%AC/index.html">
+<meta property="og:site_name" content="undertow &#39;s blog">
+<meta property="og:description" content="本文转自： 作者：编程迷思 原文链接：https:&#x2F;&#x2F;www.cnblogs.com&#x2F;kismetv&#x2F;p&#x2F;9236731.html   实际操作还可以参考这一篇https:&#x2F;&#x2F;blog.csdn.net&#x2F;qq_39669058&#x2F;article&#x2F;details&#x2F;87720731 其他参考文章https:&#x2F;&#x2F;www.cnblogs.com&#x2F;daofaziran&#x2F;p&#x2F;10978628.html   目">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874116768.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874154567.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874168555.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874180179.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874194104.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874209634.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874235055.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874266643.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874302691.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874314702.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874490828.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874507365.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874526076.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874544315.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874564221.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874604573.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603874627805.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603875674567.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603875688388.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603875804177.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603875814373.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603875846101.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603875872657.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603875893976.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603875916013.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603875933358.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603875951838.png">
+<meta property="og:image" content="https://hopestation.top/upload/2020/11/image_1603875965366.png">
+<meta property="article:published_time" content="2020-10-28T09:28:17.612Z">
+<meta property="article:modified_time" content="2022-09-22T14:46:59.083Z">
+<meta property="article:author" content="undertow">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://hopestation.top/upload/2020/11/image_1603874116768.png">
+
+<link rel="canonical" href="http://blog.under2.cn/2020/10/28/Redis%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E8%AF%A6%E8%A7%A3%20%EF%BC%88%E8%BD%AC%EF%BC%89-redis%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E8%AF%A6%E8%A7%A3%E8%BD%AC/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Redis主从复制详解 （转） | undertow 's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="undertow 's blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <!-- 自定义右上角 github -->
+    <a target="_blank" rel="noopener" href="https://github.com/under-tow" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <!-- 自定义右上角 github -->
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">undertow 's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.under2.cn/2020/10/28/Redis%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E8%AF%A6%E8%A7%A3%20%EF%BC%88%E8%BD%AC%EF%BC%89-redis%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E8%AF%A6%E8%A7%A3%E8%BD%AC/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="undertow">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="undertow 's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis主从复制详解 （转）
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-10-28 17:28:17" itemprop="dateCreated datePublished" datetime="2020-10-28T17:28:17+08:00">2020-10-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-09-22 22:46:59" itemprop="dateModified" datetime="2022-09-22T22:46:59+08:00">2022-09-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <ol>
+<li>本文转自：<ul>
+<li>作者：编程迷思</li>
+<li>原文链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/kismetv/p/9236731.html">https://www.cnblogs.com/kismetv/p/9236731.html</a></li>
+</ul>
+</li>
+<li>实际操作还可以参考这一篇<br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_39669058/article/details/87720731">https://blog.csdn.net/qq_39669058/article/details/87720731</a></li>
+<li>其他参考文章<br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/daofaziran/p/10978628.html">https://www.cnblogs.com/daofaziran/p/10978628.html</a></li>
+</ol>
+<hr>
+<p><strong>目录</strong></p>
+<p>[TOC]</p>
+<h1 id="一、主从复制概述"><a href="#一、主从复制概述" class="headerlink" title="一、主从复制概述"></a>一、主从复制概述</h1><p>主从复制，是指将一台Redis服务器的数据，复制到其他的Redis服务器。前者称为主节点(master)，后者称为从节点(slave)；数据的复制是单向的，只能由主节点到从节点。</p>
+<p>默认情况下，每台Redis服务器都是主节点；且一个主节点可以有多个从节点(或没有从节点)，但一个从节点只能有一个主节点。</p>
+<p><strong>为什么要主从复制？</strong></p>
+<p>主从复制的作用主要包括：</p>
+<ol>
+<li><strong>数据冗余</strong>：主从复制实现了数据的热备份，是持久化之外的一种数据冗余方式。</li>
+<li><strong>故障恢复</strong>：当主节点出现问题时，可以由从节点提供服务，实现快速的故障恢复；实际上是一种服务的冗余。</li>
+<li>负载均衡：在主从复制的基础上，配合<strong>读写分离</strong>，可以由主节点提供写服务，由从节点提供读服务（即写Redis数据时应用连接主节点，读Redis数据时应用连接从节点），<strong>分担服务器负载</strong>；尤其是在写少读多的场景下，通过多个从节点分担读负载，可以大大<strong>提高Redis服务器的并发量</strong>。（我认为是主要的作用）</li>
+<li>高可用基石：除了上述作用以外，主从复制还是哨兵和集群能够实施的基础，因此说主从复制是Redis<strong>高可用</strong>的基础。</li>
+</ol>
+<h1 id="二、如何使用主从复制"><a href="#二、如何使用主从复制" class="headerlink" title="二、如何使用主从复制"></a>二、如何使用主从复制</h1><p>为了更直观的理解主从复制，在介绍其内部原理之前，先说明我们需要如何操作才能开启主从复制。</p>
+<h2 id="1-建立复制"><a href="#1-建立复制" class="headerlink" title="1. 建立复制"></a>1. 建立复制</h2><p>需要注意，<strong>主从复制的开启，完全是在从节点发起的；不需要我们在主节点做任何事情。</strong></p>
+<p>从节点开启主从复制，有3种方式：</p>
+<p>（1）配置文件</p>
+<p>在从服务器的配置文件中加入：slaveof <masterip> <masterport></p>
+<p>（2）启动命令</p>
+<p>redis-server启动命令后加入 –slaveof <masterip> <masterport></p>
+<p>（3）客户端命令</p>
+<p>Redis服务器启动后，直接通过客户端执行命令：slaveof <masterip> <masterport>，则该Redis实例成为从节点。</p>
+<p>上述3种方式是等效的，下面以客户端命令的方式为例，看一下当执行了slaveof后，Redis主节点和从节点的变化。</p>
+<h2 id="2-实例"><a href="#2-实例" class="headerlink" title="2. 实例"></a>2. 实例</h2><h3 id="准备工作：启动两个节点"><a href="#准备工作：启动两个节点" class="headerlink" title="准备工作：启动两个节点"></a>准备工作：启动两个节点</h3><p>方便起见，实验所使用的主从节点是在一台机器上的不同Redis实例，其中主节点监听6379端口，从节点监听6380端口；从节点监听的端口号可以在配置文件中修改：<br><img src="https://hopestation.top/upload/2020/11/image_1603874116768.png" alt="image.png"></p>
+<p>启动后可以看到：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874154567.png" alt="image.png"></p>
+<p>两个Redis节点启动后（分别称为6379节点和6380节点），默认都是主节点。</p>
+<h3 id="建立复制"><a href="#建立复制" class="headerlink" title="建立复制"></a>建立复制</h3><p>此时在6380节点执行slaveof命令，使之变为从节点：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874168555.png" alt="image.png"></p>
+<h3 id="观察效果"><a href="#观察效果" class="headerlink" title="观察效果"></a>观察效果</h3><p>下面验证一下，在主从复制建立后，主节点的数据会复制到从节点中。</p>
+<p>（1）首先在从节点查询一个不存在的key：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874180179.png" alt="image.png"></p>
+<p>（2）然后在主节点中增加这个key：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874194104.png" alt="image.png"></p>
+<p>（3）此时在从节点中再次查询这个key，会发现主节点的操作已经同步至从节点：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874209634.png" alt="image.png">!</p>
+<p>（4）然后在主节点删除这个key：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874235055.png" alt="image.png"></p>
+<p>（5）此时在从节点中再次查询这个key，会发现主节点的操作已经同步至从节点：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874266643.png" alt="image.png"></p>
+<h2 id="3-断开复制"><a href="#3-断开复制" class="headerlink" title="3. 断开复制"></a>3. 断开复制</h2><p>通过slaveof <masterip> <masterport>命令建立主从复制关系以后，可以通过slaveof no one断开。需要注意的是，从节点断开复制后，不会删除已有的数据，只是不再接受主节点新的数据变化。</p>
+<p>从节点执行slaveof no one后，打印日志如下所示；可以看出断开复制后，从节点又变回为主节点。</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874302691.png" alt="image.png"></p>
+<p>主节点打印日志如下：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874314702.png" alt="image.png"></p>
+<h1 id="三、主从复制的实现原理"><a href="#三、主从复制的实现原理" class="headerlink" title="三、主从复制的实现原理"></a>三、主从复制的实现原理</h1><p>上面一节中，介绍了如何操作可以建立主从关系；本小节将介绍主从复制的实现原理。</p>
+<p>主从复制过程大体可以分为3个阶段：连接建立阶段（即准备阶段）、数据同步阶段、命令传播阶段；下面分别进行介绍。</p>
+<h2 id="1-连接建立阶段"><a href="#1-连接建立阶段" class="headerlink" title="1. 连接建立阶段"></a>1. 连接建立阶段</h2><p>该阶段的主要作用是在主从节点之间建立连接，为数据同步做好准备。</p>
+<h3 id="步骤1：保存主节点信息"><a href="#步骤1：保存主节点信息" class="headerlink" title="步骤1：保存主节点信息"></a>步骤1：保存主节点信息</h3><p>从节点服务器内部维护了两个字段，即masterhost和masterport字段，用于存储主节点的ip和port信息。</p>
+<p>需要注意的是，<strong>slaveof<strong><strong>是异步命令，从节点完成主节点ip</strong></strong>和port<strong><strong>的保存后，向发送slaveof</strong></strong>命令的客户端直接返回OK****，实际的复制操作在这之后才开始进行。</strong></p>
+<p>这个过程中，可以看到从节点打印日志如下：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874490828.png" alt="image.png"></p>
+<h3 id="步骤2：建立socket连接"><a href="#步骤2：建立socket连接" class="headerlink" title="步骤2：建立socket连接"></a>步骤2：建立socket连接</h3><p>从节点每秒1次调用复制定时函数replicationCron()，如果发现了有主节点可以连接，便会根据主节点的ip和port，创建socket连接。如果连接成功，则：</p>
+<p>从节点：为该socket建立一个专门处理复制工作的文件事件处理器，负责后续的复制工作，如接收RDB文件、接收命令传播等。</p>
+<p>主节点：接收到从节点的socket连接后（即accept之后），为该socket创建相应的客户端状态，<strong>并将从节点看做是连接到主节点的一个客户端，后面的步骤会以从节点向主节点发送命令请求的形式来进行。</strong></p>
+<p>这个过程中，从节点打印日志如下：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874507365.png" alt="image.png"></p>
+<h3 id="步骤3：发送ping命令"><a href="#步骤3：发送ping命令" class="headerlink" title="步骤3：发送ping命令"></a>步骤3：发送ping命令</h3><p>从节点成为主节点的客户端之后，发送ping命令进行首次请求，目的是：检查socket连接是否可用，以及主节点当前是否能够处理请求。</p>
+<p>从节点发送ping命令后，可能出现3种情况：</p>
+<p>（1）返回pong：说明socket连接正常，且主节点当前可以处理请求，复制过程继续。</p>
+<p>（2）超时：一定时间后从节点仍未收到主节点的回复，说明socket连接不可用，则从节点断开socket连接，并重连。</p>
+<p>（3）返回pong以外的结果：如果主节点返回其他结果，如正在处理超时运行的脚本，说明主节点当前无法处理命令，则从节点断开socket连接，并重连。</p>
+<p>在主节点返回pong情况下，从节点打印日志如下：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874526076.png" alt="image.png"></p>
+<h3 id="步骤4：身份验证"><a href="#步骤4：身份验证" class="headerlink" title="步骤4：身份验证"></a>步骤4：身份验证</h3><p>如果从节点中设置了masterauth选项，则从节点需要向主节点进行身份验证；没有设置该选项，则不需要验证。从节点进行身份验证是通过向主节点发送auth命令进行的，auth命令的参数即为配置文件中的masterauth的值。</p>
+<p>如果主节点设置密码的状态，与从节点masterauth的状态一致（一致是指都存在，且密码相同，或者都不存在），则身份验证通过，复制过程继续；如果不一致，则从节点断开socket连接，并重连。</p>
+<h3 id="步骤5：发送从节点端口信息"><a href="#步骤5：发送从节点端口信息" class="headerlink" title="步骤5：发送从节点端口信息"></a>步骤5：发送从节点端口信息</h3><p>身份验证之后，从节点会向主节点发送其监听的端口号（前述例子中为6380），主节点将该信息保存到该从节点对应的客户端的slave_listening_port字段中；该端口信息除了在主节点中执行info Replication时显示以外，没有其他作用。</p>
+<h2 id="2-数据同步阶段"><a href="#2-数据同步阶段" class="headerlink" title="2. 数据同步阶段"></a>2. 数据同步阶段</h2><p>主从节点之间的连接建立以后，便可以开始进行数据同步，该阶段可以理解为从节点数据的初始化。具体执行的方式是：从节点向主节点发送psync命令（Redis2.8以前是sync命令），开始同步。</p>
+<p>数据同步阶段是主从复制最核心的阶段，根据主从节点当前状态的不同，可以分为全量复制和部分复制，下面会有一章专门讲解这两种复制方式以及psync命令的执行过程，这里不再详述。</p>
+<p>需要注意的是，在数据同步阶段之前，从节点是主节点的客户端，主节点不是从节点的客户端；而到了这一阶段及以后，主从节点互为客户端。原因在于：在此之前，主节点只需要响应从节点的请求即可，不需要主动发请求，而在数据同步阶段和后面的命令传播阶段，主节点需要主动向从节点发送请求（如推送缓冲区中的写命令），才能完成复制。</p>
+<h2 id="3-命令传播阶段"><a href="#3-命令传播阶段" class="headerlink" title="3. 命令传播阶段"></a>3. 命令传播阶段</h2><p>数据同步阶段完成后，主从节点进入命令传播阶段；在这个阶段主节点将自己执行的写命令发送给从节点，从节点接收命令并执行，从而保证主从节点数据的一致性。</p>
+<p>在命令传播阶段，除了发送写命令，主从节点还维持着心跳机制：PING和REPLCONF ACK。由于心跳机制的原理涉及部分复制，因此将在介绍了部分复制的相关内容后单独介绍该心跳机制。</p>
+<p><strong>延迟与不一致</strong></p>
+<p>需要注意的是，命令传播是异步的过程，即主节点发送写命令后并不会等待从节点的回复；因此实际上主从节点之间很难保持实时的一致性，延迟在所难免。数据不一致的程度，与主从节点之间的网络状况、主节点写命令的执行频率、以及主节点中的repl-disable-tcp-nodelay配置等有关。</p>
+<p>repl-disable-tcp-nodelay no：该配置作用于命令传播阶段，控制主节点是否禁止与从节点的TCP_NODELAY；默认no，即不禁止TCP_NODELAY。当设置为yes时，TCP会对包进行合并从而减少带宽，但是发送的频率会降低，从节点数据延迟增加，一致性变差；具体发送频率与Linux内核的配置有关，默认配置为40ms。当设置为no时，TCP会立马将主节点的数据发送给从节点，带宽增加但延迟变小。</p>
+<p>一般来说，只有当应用对Redis数据不一致的容忍度较高，且主从节点之间网络状况不好时，才会设置为yes；多数情况使用默认值no。</p>
+<h1 id="四、【数据同步阶段】全量复制和部分复制"><a href="#四、【数据同步阶段】全量复制和部分复制" class="headerlink" title="四、【数据同步阶段】全量复制和部分复制"></a>四、【数据同步阶段】全量复制和部分复制</h1><p>在Redis2.8以前，从节点向主节点发送sync命令请求同步数据，此时的同步方式是全量复制；在Redis2.8及以后，从节点可以发送psync命令请求同步数据，此时根据主从节点当前状态的不同，同步方式可能是全量复制或部分复制。后文介绍以Redis2.8及以后版本为例。</p>
+<ol>
+<li>全量复制：用于初次复制或其他无法进行部分复制的情况，将主节点中的所有数据都发送给从节点，是一个非常重型的操作。</li>
+<li>部分复制：用于网络中断等情况后的复制，只将中断期间主节点执行的写命令发送给从节点，与全量复制相比更加高效。需要注意的是，如果网络中断时间过长，导致主节点没有能够完整地保存中断期间执行的写命令，则无法进行部分复制，仍使用全量复制。</li>
+</ol>
+<h2 id="1-全量复制"><a href="#1-全量复制" class="headerlink" title="1. 全量复制"></a>1. 全量复制</h2><p>Redis通过psync命令进行全量复制的过程如下：</p>
+<p>（1）从节点判断无法进行部分复制，向主节点发送全量复制的请求；或从节点发送部分复制的请求，但主节点判断无法进行部分复制；具体判断过程需要在讲述了部分复制原理后再介绍。</p>
+<p>（2）主节点收到全量复制的命令后，执行bgsave，在后台生成RDB文件，并使用一个缓冲区（称为复制缓冲区）记录从现在开始执行的所有写命令</p>
+<p>（3）主节点的bgsave执行完成后，将RDB文件发送给从节点；<strong>从节点首先清除自己的旧数据，然后载入接收的<strong><strong>RDB</strong></strong>文件</strong>，将数据库状态更新至主节点执行bgsave时的数据库状态</p>
+<p>（4）主节点将前述复制缓冲区中的所有写命令发送给从节点，从节点执行这些写命令，将数据库状态更新至主节点的最新状态</p>
+<p>（5）如果从节点开启了AOF，则会触发bgrewriteaof的执行，从而保证AOF文件更新至主节点的最新状态</p>
+<p>下面是执行全量复制时，主从节点打印的日志；可以看出日志内容与上述步骤是完全对应的。</p>
+<p>主节点的打印日志如下：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874544315.png" alt="image.png"></p>
+<p>从节点打印日志如下图所示：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874564221.png" alt="image.png"></p>
+<p>其中，有几点需要注意：从节点接收了来自主节点的89260个字节的数据；从节点在载入主节点的数据之前要先将老数据清除；从节点在同步完数据后，调用了bgrewriteaof。</p>
+<p>通过全量复制的过程可以看出，全量复制是非常重型的操作：</p>
+<p>（1）主节点通过bgsave命令fork子进程进行RDB持久化，该过程是非常消耗CPU、内存(页表复制)、硬盘IO的；关于bgsave的性能问题，可以参考 <a target="_blank" rel="noopener" href="https://www.cnblogs.com/kismetv/p/9137897.html">深入学习Redis（2）：持久化</a></p>
+<p>（2）主节点通过网络将RDB文件发送给从节点，对主从节点的带宽都会带来很大的消耗</p>
+<p>（3）从节点清空老数据、载入新RDB文件的过程是阻塞的，无法响应客户端的命令；如果从节点执行bgrewriteaof，也会带来额外的消耗</p>
+<h2 id="2-部分复制"><a href="#2-部分复制" class="headerlink" title="2. 部分复制"></a>2. 部分复制</h2><p>由于全量复制在主节点数据量较大时效率太低，因此Redis2.8开始提供部分复制，用于处理网络中断时的数据同步。</p>
+<p>部分复制的实现，依赖于三个重要的概念：</p>
+<h3 id="（1）复制偏移量"><a href="#（1）复制偏移量" class="headerlink" title="（1）复制偏移量"></a>（1）复制偏移量</h3><p>主节点和从节点分别维护一个复制偏移量（offset），代表的是<strong>主节点向从节点传递的字节数</strong>；主节点每次向从节点传播N个字节数据时，主节点的offset增加N；从节点每次收到主节点传来的N个字节数据时，从节点的offset增加N。</p>
+<p>offset用于判断主从节点的数据库状态是否一致：如果二者offset相同，则一致；如果offset不同，则不一致，此时可以根据两个offset找出从节点缺少的那部分数据。例如，如果主节点的offset是1000，而从节点的offset是500，那么部分复制就需要将offset为501-1000的数据传递给从节点。而offset为501-1000的数据存储的位置，就是下面要介绍的复制积压缓冲区。</p>
+<h3 id="（2）复制积压缓冲区"><a href="#（2）复制积压缓冲区" class="headerlink" title="（2）复制积压缓冲区"></a>（2）复制积压缓冲区</h3><p>复制积压缓冲区是由主节点维护的、固定长度的、先进先出(FIFO)队列，默认大小1MB；当主节点开始有从节点时创建，其作用是备份主节点最近发送给从节点的数据。注意，无论主节点有一个还是多个从节点，都只需要一个复制积压缓冲区。</p>
+<p>在命令传播阶段，主节点除了将写命令发送给从节点，还会发送一份给复制积压缓冲区，作为写命令的备份；除了存储写命令，复制积压缓冲区中还存储了其中的每个字节对应的复制偏移量（offset）。由于复制积压缓冲区定长且是先进先出，所以它保存的是主节点最近执行的写命令；时间较早的写命令会被挤出缓冲区。</p>
+<p>由于该缓冲区长度固定且有限，因此可以备份的写命令也有限，当主从节点offset的差距过大超过缓冲区长度时，将无法执行部分复制，只能执行全量复制。反过来说，为了提高网络中断时部分复制执行的概率，可以根据需要增大复制积压缓冲区的大小(通过配置repl-backlog-size)；例如如果网络中断的平均时间是60s，而主节点平均每秒产生的写命令(特定协议格式)所占的字节数为100KB，则复制积压缓冲区的平均需求为6MB，保险起见，可以设置为12MB，来保证绝大多数断线情况都可以使用部分复制。</p>
+<p>从节点将offset发送给主节点后，主节点根据offset和缓冲区大小决定能否执行部分复制：</p>
+<ul>
+<li>如果offset偏移量之后的数据，仍然都在复制积压缓冲区里，则执行部分复制；</li>
+<li>如果offset偏移量之后的数据已不在复制积压缓冲区中（数据已被挤出），则执行全量复制。</li>
+</ul>
+<h3 id="（3）服务器运行ID-runid"><a href="#（3）服务器运行ID-runid" class="headerlink" title="（3）服务器运行ID(runid)"></a>（3）服务器运行ID(runid)</h3><p>每个Redis节点(无论主从)，在启动时都会自动生成一个随机ID(每次启动都不一样)，由40个随机的十六进制字符组成；runid用来唯一识别一个Redis节点。通过info Server命令，可以查看节点的runid：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874604573.png" alt="image.png"></p>
+<p>主从节点初次复制时，主节点将自己的runid发送给从节点，从节点将这个runid保存起来；当断线重连时，从节点会将这个runid发送给主节点；主节点根据runid判断能否进行部分复制：</p>
+<ul>
+<li>如果从节点保存的runid与主节点现在的runid相同，说明主从节点之前同步过，主节点会继续尝试使用部分复制(到底能不能部分复制还要看offset和复制积压缓冲区的情况)；</li>
+<li>如果从节点保存的runid与主节点现在的runid不同，说明从节点在断线前同步的Redis节点并不是当前的主节点，只能进行全量复制。</li>
+</ul>
+<h2 id="3-psync命令的执行"><a href="#3-psync命令的执行" class="headerlink" title="3. psync命令的执行"></a>3. psync命令的执行</h2><p>在了解了复制偏移量、复制积压缓冲区、节点运行id之后，本节将介绍psync命令的参数和返回值，从而说明psync命令执行过程中，主从节点是如何确定使用全量复制还是部分复制的。</p>
+<p>psync命令的执行过程可以参见下图（图片来源：《Redis设计与实现》）：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603874627805.png" alt="image.png"></p>
+<p>（1）首先，从节点根据当前状态，决定如何调用psync命令：</p>
+<ul>
+<li>如果从节点之前未执行过slaveof或最近执行了slaveof no one，则从节点发送命令为psync ? -1，向主节点请求全量复制；</li>
+<li>如果从节点之前执行了slaveof，则发送命令为psync <runid> <offset>，其中runid为上次复制的主节点的runid，offset为上次复制截止时从节点保存的复制偏移量。</li>
+</ul>
+<p>（2）主节点根据收到的psync命令，及当前服务器状态，决定执行全量复制还是部分复制：</p>
+<ul>
+<li>如果主节点版本低于Redis2.8，则返回-ERR回复，此时从节点重新发送sync命令执行全量复制；</li>
+<li>如果主节点版本够新，且runid与从节点发送的runid相同，且从节点发送的offset之后的数据在复制积压缓冲区中都存在，则回复+CONTINUE，表示将进行部分复制，从节点等待主节点发送其缺少的数据即可；</li>
+<li>如果主节点版本够新，但是runid与从节点发送的runid不同，或从节点发送的offset之后的数据已不在复制积压缓冲区中(在队列中被挤出了)，则回复+FULLRESYNC <runid> <offset>，表示要进行全量复制，其中runid表示主节点当前的runid，offset表示主节点当前的offset，从节点保存这两个值，以备使用。</li>
+</ul>
+<h2 id="4-部分复制演示"><a href="#4-部分复制演示" class="headerlink" title="4. 部分复制演示"></a>4. 部分复制演示</h2><p>在下面的演示中，网络中断几分钟后恢复，断开连接的主从节点进行了部分复制；为了便于模拟网络中断，本例中的主从节点在局域网中的两台机器上。</p>
+<p><strong>网络中断</strong></p>
+<p>网络中断一段时间后，主节点和从节点都会发现失去了与对方的连接（关于主从节点对超时的判断机制，后面会有说明）；此后，从节点便开始执行对主节点的重连，由于此时网络还没有恢复，重连失败，从节点会一直尝试重连。</p>
+<p>主节点日志如下：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603875674567.png" alt="image.png"></p>
+<p>从节点日志如下：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603875688388.png" alt="image.png"></p>
+<p><strong>网络恢复</strong></p>
+<p>网络恢复后，从节点连接主节点成功，并请求进行部分复制，主节点接收请求后，二者进行部分复制以同步数据。</p>
+<p>主节点日志如下：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603875804177.png" alt="image.png"></p>
+<p>从节点日志如下：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603875814373.png" alt="image.png"></p>
+<h1 id="五、【命令传播阶段】心跳机制"><a href="#五、【命令传播阶段】心跳机制" class="headerlink" title="五、【命令传播阶段】心跳机制"></a>五、【命令传播阶段】心跳机制</h1><p>在命令传播阶段，除了发送写命令，主从节点还维持着心跳机制：PING和REPLCONF ACK。心跳机制对于主从复制的超时判断、数据安全等有作用。</p>
+<h2 id="1-主-gt-从：PING"><a href="#1-主-gt-从：PING" class="headerlink" title="1.主-&gt;从：PING"></a>1.主-&gt;从：PING</h2><p>每隔指定的时间，<strong>主节点会向从节点发送<strong><strong>PING</strong></strong>命令</strong>，这个PING命令的作用，主要是为了让从节点进行超时判断。</p>
+<p>PING发送的频率由repl-ping-slave-period参数控制，单位是秒，默认值是10s。</p>
+<p>关于该PING命令究竟是由主节点发给从节点，还是相反，有一些争议；因为在Redis的官方文档中，对该参数的注释中说明是从节点向主节点发送PING命令，如下图所示：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603875846101.png" alt="image.png"></p>
+<p>但是根据该参数的名称(含有ping-slave)，以及代码实现，我认为该PING命令是主节点发给从节点的。相关代码如下：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603875872657.png" alt="image.png"></p>
+<h2 id="2-从-gt-主：REPLCONF-ACK"><a href="#2-从-gt-主：REPLCONF-ACK" class="headerlink" title="2. 从-&gt;主：REPLCONF ACK"></a>2. 从-&gt;主：REPLCONF ACK</h2><p>在命令传播阶段，<strong>从节点会向主节点发送<strong><strong>REPLCONF ACK</strong></strong>命令，</strong>频率是每秒1次；命令格式为：REPLCONF ACK {offset}，其中offset指从节点保存的复制偏移量。REPLCONF ACK命令的作用包括：</p>
+<p>（1）实时监测主从节点网络状态：该命令会被主节点用于复制超时的判断。此外，在主节点中使用info Replication，可以看到其从节点的状态中的lag值，代表的是主节点上次收到该REPLCONF ACK命令的时间间隔，在正常情况下，该值应该是0或1，如下图所示：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603875893976.png" alt="image.png"></p>
+<p>（2）检测命令丢失：从节点发送了自身的offset，主节点会与自己的offset对比，如果从节点数据缺失（如网络丢包），主节点会推送缺失的数据（这里也会利用复制积压缓冲区）。<strong>注意，<strong><strong>offset</strong></strong>和复制积压缓冲区，不仅可以用于部分复制，也可以用于处理命令丢失等情形；区别在于前者是在断线重连后进行的，而后者是在主从节点没有断线的情况下进行的。</strong></p>
+<p>（3）辅助保证从节点的数量和延迟：Redis主节点中使用min-slaves-to-write和min-slaves-max-lag参数，来保证主节点在不安全的情况下不会执行写命令；所谓不安全，是指从节点数量太少，或延迟过高。例如min-slaves-to-write和min-slaves-max-lag分别是3和10，含义是如果从节点数量小于3个，或所有从节点的延迟值都大于10s，则主节点拒绝执行写命令。而这里从节点延迟值的获取，就是通过主节点接收到REPLCONF ACK命令的时间来判断的，即前面所说的info Replication中的lag值。</p>
+<h1 id="六、应用中的问题"><a href="#六、应用中的问题" class="headerlink" title="六、应用中的问题"></a>六、应用中的问题</h1><h2 id="1-读写分离及其中的问题"><a href="#1-读写分离及其中的问题" class="headerlink" title="1. 读写分离及其中的问题"></a>1. 读写分离及其中的问题</h2><p>在主从复制基础上实现的读写分离，可以实现Redis的读负载均衡：由主节点提供写服务，由一个或多个从节点提供读服务（多个从节点既可以提高数据冗余程度，也可以最大化读负载能力）；在读负载较大的应用场景下，可以大大提高Redis服务器的并发量。下面介绍在使用Redis读写分离时，需要注意的问题。</p>
+<h3 id="（1）延迟与不一致问题"><a href="#（1）延迟与不一致问题" class="headerlink" title="（1）延迟与不一致问题"></a>（1）延迟与不一致问题</h3><p>前面已经讲到，由于主从复制的命令传播是异步的，延迟与数据的不一致不可避免。如果应用对数据不一致的接受程度程度较低，可能的优化措施包括：优化主从节点之间的网络环境（如在同机房部署）；监控主从节点延迟（通过offset）判断，如果从节点延迟过大，通知应用不再通过该从节点读取数据；使用集群同时扩展写负载和读负载等。</p>
+<p>在命令传播阶段以外的其他情况下，从节点的数据不一致可能更加严重，例如连接在数据同步阶段，或从节点失去与主节点的连接时等。从节点的slave-serve-stale-data参数便与此有关：它控制这种情况下从节点的表现；如果为yes（默认值），则从节点仍能够响应客户端的命令，如果为no，则从节点只能响应info、slaveof等少数命令。该参数的设置与应用对数据一致性的要求有关；如果对数据一致性要求很高，则应设置为no。</p>
+<h3 id="（2）数据过期问题"><a href="#（2）数据过期问题" class="headerlink" title="（2）数据过期问题"></a>（2）数据过期问题</h3><p>在单机版Redis中，存在两种删除策略：</p>
+<ul>
+<li>惰性删除：服务器不会主动删除数据，只有当客户端查询某个数据时，服务器判断该数据是否过期，如果过期则删除。</li>
+<li>定期删除：服务器执行定时任务删除过期数据，但是考虑到内存和CPU的折中（删除会释放内存，但是频繁的删除操作对CPU不友好），该删除的频率和执行时间都受到了限制。</li>
+</ul>
+<p>在主从复制场景下，为了主从节点的数据一致性，从节点不会主动删除数据，而是由主节点控制从节点中过期数据的删除。由于主节点的惰性删除和定期删除策略，都不能保证主节点及时对过期数据执行删除操作，因此，当客户端通过Redis从节点读取数据时，很容易读取到已经过期的数据。</p>
+<p>Redis 3.2中，从节点在读取数据时，增加了对数据是否过期的判断：如果该数据已过期，则不返回给客户端；将Redis升级到3.2可以解决数据过期问题。</p>
+<h3 id="（3）故障切换问题"><a href="#（3）故障切换问题" class="headerlink" title="（3）故障切换问题"></a>（3）故障切换问题</h3><p>在没有使用哨兵的读写分离场景下，应用针对读和写分别连接不同的Redis节点；当主节点或从节点出现问题而发生更改时，需要及时修改应用程序读写Redis数据的连接；连接的切换可以手动进行，或者自己写监控程序进行切换，但前者响应慢、容易出错，后者实现复杂，成本都不算低。</p>
+<h3 id="（4）总结"><a href="#（4）总结" class="headerlink" title="（4）总结"></a>（4）总结</h3><p>在使用读写分离之前，可以考虑其他方法增加Redis的读负载能力：如尽量优化主节点（减少慢查询、减少持久化等其他情况带来的阻塞等）提高负载能力；使用Redis集群同时提高读负载能力和写负载能力等。如果使用读写分离，可以使用哨兵，使主从节点的故障切换尽可能自动化，并减少对应用程序的侵入。</p>
+<h2 id="2-复制超时问题"><a href="#2-复制超时问题" class="headerlink" title="2. 复制超时问题"></a>2. 复制超时问题</h2><p>主从节点复制超时是导致复制中断的最重要的原因之一，本小节单独说明超时问题，下一小节说明其他会导致复制中断的问题。</p>
+<p><strong>超时判断意义</strong></p>
+<p>在复制连接建立过程中及之后，主从节点都有机制判断连接是否超时，其意义在于：</p>
+<p>（1）如果主节点判断连接超时，其会释放相应从节点的连接，从而释放各种资源，否则无效的从节点仍会占用主节点的各种资源（输出缓冲区、带宽、连接等）；此外连接超时的判断可以让主节点更准确的知道当前有效从节点的个数，有助于保证数据安全（配合前面讲到的min-slaves-to-write等参数）。</p>
+<p>（2）如果从节点判断连接超时，则可以及时重新建立连接，避免与主节点数据长期的不一致。</p>
+<p><strong>判断机制</strong></p>
+<p>主从复制超时判断的核心，在于repl-timeout参数，该参数规定了超时时间的阈值（默认60s），对于主节点和从节点同时有效；主从节点触发超时的条件分别如下：</p>
+<p>（1）主节点：每秒1次调用复制定时函数replicationCron()，在其中判断当前时间距离上次收到各个从节点REPLCONF ACK的时间，是否超过了repl-timeout值，如果超过了则释放相应从节点的连接。</p>
+<p>（2）从节点：从节点对超时的判断同样是在复制定时函数中判断，基本逻辑是：</p>
+<ul>
+<li>如果当前处于连接建立阶段，且距离上次收到主节点的信息的时间已超过repl-timeout，则释放与主节点的连接；</li>
+<li>如果当前处于数据同步阶段，且收到主节点的RDB文件的时间超时，则停止数据同步，释放连接；</li>
+<li>如果当前处于命令传播阶段，且距离上次收到主节点的PING命令或数据的时间已超过repl-timeout值，则释放与主节点的连接。</li>
+</ul>
+<p>主从节点判断连接超时的相关源代码如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">/* Replication cron <span class="keyword">function</span>, called 1 time per second. */</span><br><span class="line">void replicationCron(void) &#123;</span><br><span class="line">    static long long replication_cron_loops = 0;</span><br><span class="line"> </span><br><span class="line">    /* Non blocking connection <span class="built_in">timeout</span>? */</span><br><span class="line">    <span class="keyword">if</span> (server.masterhost &amp;&amp;</span><br><span class="line">        (server.repl_state == REDIS_REPL_CONNECTING ||</span><br><span class="line">         slaveIsInHandshakeState()) &amp;&amp;</span><br><span class="line">         (time(NULL)-server.repl_transfer_lastio) &gt; server.repl_timeout)</span><br><span class="line">    &#123;</span><br><span class="line">        redisLog(REDIS_WARNING,<span class="string">&quot;Timeout connecting to the MASTER...&quot;</span>);</span><br><span class="line">        undoConnectWithMaster();</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    /* Bulk transfer I/O <span class="built_in">timeout</span>? */</span><br><span class="line">    <span class="keyword">if</span> (server.masterhost &amp;&amp; server.repl_state == REDIS_REPL_TRANSFER &amp;&amp;</span><br><span class="line">        (time(NULL)-server.repl_transfer_lastio) &gt; server.repl_timeout)</span><br><span class="line">    &#123;</span><br><span class="line">        redisLog(REDIS_WARNING,<span class="string">&quot;Timeout receiving bulk data from MASTER... If the problem persists try to set the &#x27;repl-timeout&#x27; parameter in redis.conf to a larger value.&quot;</span>);</span><br><span class="line">        replicationAbortSyncTransfer();</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    /* Timed out master when we are an already connected slave? */</span><br><span class="line">    <span class="keyword">if</span> (server.masterhost &amp;&amp; server.repl_state == REDIS_REPL_CONNECTED &amp;&amp;</span><br><span class="line">        (time(NULL)-server.master-&gt;lastinteraction) &gt; server.repl_timeout)</span><br><span class="line">    &#123;</span><br><span class="line">        redisLog(REDIS_WARNING,<span class="string">&quot;MASTER timeout: no data nor PING received...&quot;</span>);</span><br><span class="line">        freeClient(server.master);</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    //此处省略无关代码……</span><br><span class="line"> </span><br><span class="line">    /* Disconnect timedout slaves. */</span><br><span class="line">    <span class="keyword">if</span> (listLength(server.slaves)) &#123;</span><br><span class="line">        listIter li;</span><br><span class="line">        listNode *<span class="built_in">ln</span>;</span><br><span class="line">        listRewind(server.slaves,&amp;li);</span><br><span class="line">        <span class="keyword">while</span>((ln = listNext(&amp;li))) &#123;</span><br><span class="line">            redisClient *slave = <span class="built_in">ln</span>-&gt;value;</span><br><span class="line">            <span class="keyword">if</span> (slave-&gt;replstate != REDIS_REPL_ONLINE) <span class="built_in">continue</span>;</span><br><span class="line">            <span class="keyword">if</span> (slave-&gt;flags &amp; REDIS_PRE_PSYNC) <span class="built_in">continue</span>;</span><br><span class="line">            <span class="keyword">if</span> ((server.unixtime - slave-&gt;repl_ack_time) &gt; server.repl_timeout)</span><br><span class="line">            &#123;</span><br><span class="line">                redisLog(REDIS_WARNING, &quot;Disconnecting timedout slave: %s&quot;,</span><br><span class="line">                    replicationGetSlaveName(slave));</span><br><span class="line">                freeClient(slave);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    //此处省略无关代码……</span><br><span class="line"> </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>　　</p>
+<p><strong>需要注意的坑</strong></p>
+<p>下面介绍与复制阶段连接超时有关的一些实际问题：</p>
+<p>（1）数据同步阶段：在主从节点进行全量复制bgsave时，主节点需要首先fork子进程将当前数据保存到RDB文件中，然后再将RDB文件通过网络传输到从节点。如果RDB文件过大，主节点在fork子进程+保存RDB文件时耗时过多，可能会导致从节点长时间收不到数据而触发超时；此时从节点会重连主节点，然后再次全量复制，再次超时，再次重连……这是个悲伤的循环。为了避免这种情况的发生，除了注意Redis单机数据量不要过大，另一方面就是适当增大repl-timeout值，具体的大小可以根据bgsave耗时来调整。</p>
+<p>（2）命令传播阶段：如前所述，在该阶段主节点会向从节点发送PING命令，频率由repl-ping-slave-period控制；该参数应明显小于repl-timeout值(后者至少是前者的几倍)。否则，如果两个参数相等或接近，网络抖动导致个别PING命令丢失，此时恰巧主节点也没有向从节点发送数据，则从节点很容易判断超时。</p>
+<p>（3）慢查询导致的阻塞：如果主节点或从节点执行了一些慢查询（如keys *或者对大数据的hgetall等），导致服务器阻塞；阻塞期间无法响应复制连接中对方节点的请求，可能导致复制超时。</p>
+<h2 id="3-复制中断问题"><a href="#3-复制中断问题" class="headerlink" title="3. 复制中断问题"></a>3. 复制中断问题</h2><p>主从节点超时是复制中断的原因之一，除此之外，还有其他情况可能导致复制中断，其中最主要的是复制缓冲区溢出问题。</p>
+<h3 id="复制缓冲区溢出"><a href="#复制缓冲区溢出" class="headerlink" title="复制缓冲区溢出"></a>复制缓冲区溢出</h3><p>前面曾提到过，在全量复制阶段，主节点会将执行的写命令放到复制缓冲区中，该缓冲区存放的数据包括了以下几个时间段内主节点执行的写命令：bgsave生成RDB文件、RDB文件由主节点发往从节点、从节点清空老数据并载入RDB文件中的数据。当主节点数据量较大，或者主从节点之间网络延迟较大时，可能导致该缓冲区的大小超过了限制，此时主节点会断开与从节点之间的连接；这种情况可能引起全量复制-&gt;复制缓冲区溢出导致连接中断-&gt;重连-&gt;全量复制-&gt;复制缓冲区溢出导致连接中断……的循环。</p>
+<p>复制缓冲区的大小由client-output-buffer-limit slave {hard limit} {soft limit} {soft seconds}配置，默认值为client-output-buffer-limit slave 256MB 64MB 60，其含义是：如果buffer大于256MB，或者连续60s大于64MB，则主节点会断开与该从节点的连接。该参数是可以通过config set命令动态配置的（即不重启Redis也可以生效）。</p>
+<p>当复制缓冲区溢出时，主节点打印日志如下所示：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603875916013.png" alt="image.png"></p>
+<p><strong>需要注意的是，复制缓冲区是客户端输出缓冲区的一种，主节点会为每一个从节点分别分配复制缓冲区；而复制积压缓冲区则是一个主节点只有一个，无论它有多少个从节点。</strong></p>
+<h2 id="4-各场景下复制的选择及优化技巧"><a href="#4-各场景下复制的选择及优化技巧" class="headerlink" title="4. 各场景下复制的选择及优化技巧"></a>4. 各场景下复制的选择及优化技巧</h2><p>在介绍了Redis复制的种种细节之后，现在我们可以来总结一下，在下面常见的场景中，何时使用部分复制，以及需要注意哪些问题。</p>
+<h3 id="（1）第一次建立复制"><a href="#（1）第一次建立复制" class="headerlink" title="（1）第一次建立复制"></a>（1）第一次建立复制</h3><p>此时全量复制不可避免，但仍有几点需要注意：如果主节点的数据量较大，应该尽量避开流量的高峰期，避免造成阻塞；如果有多个从节点需要建立对主节点的复制，可以考虑将几个从节点错开，避免主节点带宽占用过大。此外，如果从节点过多，也可以调整主从复制的拓扑结构，由一主多从结构变为树状结构（中间的节点既是其主节点的从节点，也是其从节点的主节点）；但使用树状结构应该谨慎：虽然主节点的直接从节点减少，降低了主节点的负担，但是多层从节点的延迟增大，数据一致性变差；且结构复杂，维护相当困难。</p>
+<h3 id="（2）主节点重启"><a href="#（2）主节点重启" class="headerlink" title="（2）主节点重启"></a>（2）主节点重启</h3><p>主节点重启可以分为两种情况来讨论，一种是故障导致宕机，另一种则是有计划的重启。</p>
+<p><strong>主节点宕机</strong></p>
+<p>主节点宕机重启后，runid会发生变化，因此不能进行部分复制，只能全量复制。</p>
+<p>实际上在主节点宕机的情况下，应进行故障转移处理，将其中的一个从节点升级为主节点，其他从节点从新的主节点进行复制；且故障转移应尽量的自动化，后面文章将要介绍的哨兵便可以进行自动的故障转移。</p>
+<p><strong>安全重启：debug reload</strong></p>
+<p>在一些场景下，可能希望对主节点进行重启，例如主节点内存碎片率过高，或者希望调整一些只能在启动时调整的参数。如果使用普通的手段重启主节点，会使得runid发生变化，可能导致不必要的全量复制。</p>
+<p>为了解决这个问题，Redis提供了debug reload的重启方式：<strong>重启后，主节点的<strong><strong>runid</strong></strong>和offset****都不受影响，</strong>避免了全量复制。</p>
+<p>如下图所示，debug reload重启后runid和offset都未受影响：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603875933358.png" alt="image.png"></p>
+<p>但debug reload是一柄双刃剑：它会清空当前内存中的数据，重新从RDB文件中加载，这个过程会导致主节点的阻塞，因此也需要谨慎。</p>
+<h3 id="（3）从节点重启"><a href="#（3）从节点重启" class="headerlink" title="（3）从节点重启"></a>（3）从节点重启</h3><p>从节点宕机重启后，其保存的主节点的runid会丢失，因此即使再次执行slaveof，也无法进行部分复制。</p>
+<h3 id="（4）网络中断"><a href="#（4）网络中断" class="headerlink" title="（4）网络中断"></a>（4）网络中断</h3><p>如果主从节点之间出现网络问题，造成短时间内网络中断，可以分为多种情况讨论。</p>
+<p>第一种情况：网络问题时间极为短暂，只造成了短暂的丢包，主从节点都没有判定超时（未触发repl-timeout）；此时只需要通过REPLCONF ACK来补充丢失的数据即可。</p>
+<p>第二种情况：网络问题时间很长，主从节点判断超时（触发了repl-timeout），且丢失的数据过多，超过了复制积压缓冲区所能存储的范围；此时主从节点无法进行部分复制，只能进行全量复制。为了尽可能避免这种情况的发生，应该根据实际情况适当调整复制积压缓冲区的大小；此外及时发现并修复网络中断，也可以减少全量复制。</p>
+<p>第三种情况：介于前述两种情况之间，主从节点判断超时，且丢失的数据仍然都在复制积压缓冲区中；此时主从节点可以进行部分复制。</p>
+<h2 id="5-复制相关的配置"><a href="#5-复制相关的配置" class="headerlink" title="5. 复制相关的配置"></a>5. 复制相关的配置</h2><p>这一节总结一下与复制有关的配置，说明这些配置的作用、起作用的阶段，以及配置方法等；通过了解这些配置，一方面加深对Redis复制的了解，另一方面掌握这些配置的方法，可以优化Redis的使用，少走坑。</p>
+<p>配置大致可以分为主节点相关配置、从节点相关配置以及与主从节点都有关的配置，下面分别说明。</p>
+<h3 id="（1）与主从节点都有关的配置"><a href="#（1）与主从节点都有关的配置" class="headerlink" title="（1）与主从节点都有关的配置"></a>（1）与主从节点都有关的配置</h3><p>首先介绍最特殊的配置，它决定了该节点是主节点还是从节点：</p>
+<ol>
+<li><p> slaveof <masterip> <masterport>：Redis启动时起作用；作用是建立复制关系，开启了该配置的Redis服务器在启动后成为从节点。该注释默认注释掉，即Redis服务器默认都是主节点。</p>
+</li>
+<li><p> repl-timeout 60：与各个阶段主从节点连接超时判断有关，见前面的介绍。</p>
+</li>
+</ol>
+<h3 id="（2）主节点相关配置"><a href="#（2）主节点相关配置" class="headerlink" title="（2）主节点相关配置"></a>（2）主节点相关配置</h3><ol>
+<li><p> repl-diskless-sync no：作用于全量复制阶段，控制主节点是否使用diskless复制（无盘复制）。所谓diskless复制，是指在全量复制时，主节点不再先把数据写入RDB文件，而是直接写入slave的socket中，整个过程中不涉及硬盘；diskless复制在磁盘IO很慢而网速很快时更有优势。需要注意的是，截至Redis3.0，diskless复制处于实验阶段，默认是关闭的。</p>
+</li>
+<li><p> repl-diskless-sync-delay 5：该配置作用于全量复制阶段，当主节点使用diskless复制时，该配置决定主节点向从节点发送之前停顿的时间，单位是秒；只有当diskless复制打开时有效，默认5s。之所以设置停顿时间，是基于以下两个考虑：(1)向slave的socket的传输一旦开始，新连接的slave只能等待当前数据传输结束，才能开始新的数据传输 (2)多个从节点有较大的概率在短时间内建立主从复制。</p>
+</li>
+<li><p> client-output-buffer-limit slave 256MB 64MB 60：与全量复制阶段主节点的缓冲区大小有关，见前面的介绍。</p>
+</li>
+<li><p> repl-disable-tcp-nodelay no：与命令传播阶段的延迟有关，见前面的介绍。</p>
+</li>
+<li><p> masterauth <master-password>：与连接建立阶段的身份验证有关，见前面的介绍。</p>
+</li>
+<li><p> repl-ping-slave-period 10：与命令传播阶段主从节点的超时判断有关，见前面的介绍。</p>
+</li>
+<li><p> repl-backlog-size 1mb：复制积压缓冲区的大小，见前面的介绍。</p>
+</li>
+<li><p> repl-backlog-ttl 3600：当主节点没有从节点时，复制积压缓冲区保留的时间，这样当断开的从节点重新连进来时，可以进行部分复制；默认3600s。如果设置为0，则永远不会释放复制积压缓冲区。</p>
+</li>
+<li><p> min-slaves-to-write 3与min-slaves-max-lag 10：规定了主节点的最小从节点数目，及对应的最大延迟，见前面的介绍。</p>
+</li>
+</ol>
+<h3 id="（3）从节点相关配置"><a href="#（3）从节点相关配置" class="headerlink" title="（3）从节点相关配置"></a>（3）从节点相关配置</h3><ol>
+<li><p> slave-serve-stale-data yes：与从节点数据陈旧时是否响应客户端命令有关，见前面的介绍。</p>
+</li>
+<li><p> slave-read-only yes：从节点是否只读；默认是只读的。由于从节点开启写操作容易导致主从节点的数据不一致，因此该配置尽量不要修改。</p>
+</li>
+</ol>
+<h2 id="6-单机内存大小限制"><a href="#6-单机内存大小限制" class="headerlink" title="6. 单机内存大小限制"></a>6. 单机内存大小限制</h2><p>在 <a target="_blank" rel="noopener" href="https://www.cnblogs.com/kismetv/p/9137897.html">深入学习Redis（2）：持久化</a> 一文中，讲到了fork操作对Redis单机内存大小的限制。实际上在Redis的使用中，限制单机内存大小的因素非常之多，下面总结一下在主从复制中，单机内存过大可能造成的影响：</p>
+<p>（1）切主：当主节点宕机时，一种常见的容灾策略是将其中一个从节点提升为主节点，并将其他从节点挂载到新的主节点上，此时这些从节点只能进行全量复制；如果Redis单机内存达到10GB，一个从节点的同步时间在几分钟的级别；如果从节点较多，恢复的速度会更慢。如果系统的读负载很高，而这段时间从节点无法提供服务，会对系统造成很大的压力。</p>
+<p>（2）从库扩容：如果访问量突然增大，此时希望增加从节点分担读负载，如果数据量过大，从节点同步太慢，难以及时应对访问量的暴增。</p>
+<p>（3）缓冲区溢出：（1）和（2）都是从节点可以正常同步的情形（虽然慢），但是如果数据量过大，导致全量复制阶段主节点的复制缓冲区溢出，从而导致复制中断，则主从节点的数据同步会全量复制-&gt;复制缓冲区溢出导致复制中断-&gt;重连-&gt;全量复制-&gt;复制缓冲区溢出导致复制中断……的循环。</p>
+<p>（4）超时：如果数据量过大，全量复制阶段主节点fork+保存RDB文件耗时过大，从节点长时间接收不到数据触发超时，主从节点的数据同步同样可能陷入全量复制-&gt;超时导致复制中断-&gt;重连-&gt;全量复制-&gt;超时导致复制中断……的循环。</p>
+<p>此外，主节点单机内存除了绝对量不能太大，其占用主机内存的比例也不应过大：最好只使用50%-65%的内存，留下30%-45%的内存用于执行bgsave命令和创建复制缓冲区等。</p>
+<h2 id="7-info-Replication"><a href="#7-info-Replication" class="headerlink" title="7. info Replication"></a>7. info Replication</h2><p>在Redis客户端通过info Replication可以查看与复制相关的状态，对于了解主从节点的当前状态，以及解决出现的问题都会有帮助。</p>
+<p>主节点：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603875951838.png" alt="image.png"></p>
+<p>从节点：</p>
+<p><img src="https://hopestation.top/upload/2020/11/image_1603875965366.png" alt="image.png"></p>
+<p>对于从节点，上半部分展示的是其作为从节点的状态，从connectd_slaves开始，展示的是其作为潜在的主节点的状态。</p>
+<p>info Replication中展示的大部分内容在文章中都已经讲述，这里不再详述。</p>
+<h1 id="七、总结"><a href="#七、总结" class="headerlink" title="七、总结"></a>七、总结</h1><p>下面回顾一下本文的主要内容：</p>
+<p>1、主从复制的作用：宏观的了解主从复制是为了解决什么样的问题，即数据冗余、故障恢复、读负载均衡等。</p>
+<p>2、主从复制的操作：即slaveof命令。</p>
+<p>3、主从复制的原理：主从复制包括了连接建立阶段、数据同步阶段、命令传播阶段；其中数据同步阶段，有全量复制和部分复制两种数据同步方式；命令传播阶段，主从节点之间有PING和REPLCONF ACK命令互相进行心跳检测。</p>
+<p>4、应用中的问题：包括读写分离的问题（数据不一致问题、数据过期问题、故障切换问题等）、复制超时问题、复制中断问题等，然后总结了主从复制相关的配置，其中repl-timeout、client-output-buffer-limit slave等对解决Redis主从复制中出现的问题可能会有帮助。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Redis/" rel="tag"># Redis</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/10/28/%E6%A0%B9%E6%8D%AEURL%E4%BF%9D%E5%AD%98%E5%9B%BE%E7%89%87%E5%88%B0%E6%9C%AC%E5%9C%B0-%E6%A0%B9%E6%8D%AEurl%E4%BF%9D%E5%AD%98%E5%9B%BE%E7%89%87%E5%88%B0%E6%9C%AC%E5%9C%B0/" rel="prev" title="根据URL保存图片到本地">
+      <i class="fa fa-chevron-left"></i> 根据URL保存图片到本地
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/10/30/Redis%EF%BC%88%E4%B9%9D%EF%BC%89%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6-redis%E4%B9%9D%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/" rel="next" title="Redis（九）主从复制">
+      Redis（九）主从复制 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">一、主从复制概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6"><span class="nav-number">2.</span> <span class="nav-text">二、如何使用主从复制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%BB%BA%E7%AB%8B%E5%A4%8D%E5%88%B6"><span class="nav-number">2.1.</span> <span class="nav-text">1. 建立复制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%AE%9E%E4%BE%8B"><span class="nav-number">2.2.</span> <span class="nav-text">2. 实例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C%EF%BC%9A%E5%90%AF%E5%8A%A8%E4%B8%A4%E4%B8%AA%E8%8A%82%E7%82%B9"><span class="nav-number">2.2.1.</span> <span class="nav-text">准备工作：启动两个节点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BB%BA%E7%AB%8B%E5%A4%8D%E5%88%B6"><span class="nav-number">2.2.2.</span> <span class="nav-text">建立复制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%82%E5%AF%9F%E6%95%88%E6%9E%9C"><span class="nav-number">2.2.3.</span> <span class="nav-text">观察效果</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%96%AD%E5%BC%80%E5%A4%8D%E5%88%B6"><span class="nav-number">2.3.</span> <span class="nav-text">3. 断开复制</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="nav-number">3.</span> <span class="nav-text">三、主从复制的实现原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E8%BF%9E%E6%8E%A5%E5%BB%BA%E7%AB%8B%E9%98%B6%E6%AE%B5"><span class="nav-number">3.1.</span> <span class="nav-text">1. 连接建立阶段</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A41%EF%BC%9A%E4%BF%9D%E5%AD%98%E4%B8%BB%E8%8A%82%E7%82%B9%E4%BF%A1%E6%81%AF"><span class="nav-number">3.1.1.</span> <span class="nav-text">步骤1：保存主节点信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A42%EF%BC%9A%E5%BB%BA%E7%AB%8Bsocket%E8%BF%9E%E6%8E%A5"><span class="nav-number">3.1.2.</span> <span class="nav-text">步骤2：建立socket连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A43%EF%BC%9A%E5%8F%91%E9%80%81ping%E5%91%BD%E4%BB%A4"><span class="nav-number">3.1.3.</span> <span class="nav-text">步骤3：发送ping命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A44%EF%BC%9A%E8%BA%AB%E4%BB%BD%E9%AA%8C%E8%AF%81"><span class="nav-number">3.1.4.</span> <span class="nav-text">步骤4：身份验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A45%EF%BC%9A%E5%8F%91%E9%80%81%E4%BB%8E%E8%8A%82%E7%82%B9%E7%AB%AF%E5%8F%A3%E4%BF%A1%E6%81%AF"><span class="nav-number">3.1.5.</span> <span class="nav-text">步骤5：发送从节点端口信息</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5%E9%98%B6%E6%AE%B5"><span class="nav-number">3.2.</span> <span class="nav-text">2. 数据同步阶段</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%91%BD%E4%BB%A4%E4%BC%A0%E6%92%AD%E9%98%B6%E6%AE%B5"><span class="nav-number">3.3.</span> <span class="nav-text">3. 命令传播阶段</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E3%80%90%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5%E9%98%B6%E6%AE%B5%E3%80%91%E5%85%A8%E9%87%8F%E5%A4%8D%E5%88%B6%E5%92%8C%E9%83%A8%E5%88%86%E5%A4%8D%E5%88%B6"><span class="nav-number">4.</span> <span class="nav-text">四、【数据同步阶段】全量复制和部分复制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%85%A8%E9%87%8F%E5%A4%8D%E5%88%B6"><span class="nav-number">4.1.</span> <span class="nav-text">1. 全量复制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E9%83%A8%E5%88%86%E5%A4%8D%E5%88%B6"><span class="nav-number">4.2.</span> <span class="nav-text">2. 部分复制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%881%EF%BC%89%E5%A4%8D%E5%88%B6%E5%81%8F%E7%A7%BB%E9%87%8F"><span class="nav-number">4.2.1.</span> <span class="nav-text">（1）复制偏移量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%882%EF%BC%89%E5%A4%8D%E5%88%B6%E7%A7%AF%E5%8E%8B%E7%BC%93%E5%86%B2%E5%8C%BA"><span class="nav-number">4.2.2.</span> <span class="nav-text">（2）复制积压缓冲区</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%883%EF%BC%89%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%BF%90%E8%A1%8CID-runid"><span class="nav-number">4.2.3.</span> <span class="nav-text">（3）服务器运行ID(runid)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-psync%E5%91%BD%E4%BB%A4%E7%9A%84%E6%89%A7%E8%A1%8C"><span class="nav-number">4.3.</span> <span class="nav-text">3. psync命令的执行</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E9%83%A8%E5%88%86%E5%A4%8D%E5%88%B6%E6%BC%94%E7%A4%BA"><span class="nav-number">4.4.</span> <span class="nav-text">4. 部分复制演示</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E3%80%90%E5%91%BD%E4%BB%A4%E4%BC%A0%E6%92%AD%E9%98%B6%E6%AE%B5%E3%80%91%E5%BF%83%E8%B7%B3%E6%9C%BA%E5%88%B6"><span class="nav-number">5.</span> <span class="nav-text">五、【命令传播阶段】心跳机制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%BB-gt-%E4%BB%8E%EF%BC%9APING"><span class="nav-number">5.1.</span> <span class="nav-text">1.主-&gt;从：PING</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E4%BB%8E-gt-%E4%B8%BB%EF%BC%9AREPLCONF-ACK"><span class="nav-number">5.2.</span> <span class="nav-text">2. 从-&gt;主：REPLCONF ACK</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E5%BA%94%E7%94%A8%E4%B8%AD%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">6.</span> <span class="nav-text">六、应用中的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%8F%8A%E5%85%B6%E4%B8%AD%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">6.1.</span> <span class="nav-text">1. 读写分离及其中的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%881%EF%BC%89%E5%BB%B6%E8%BF%9F%E4%B8%8E%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98"><span class="nav-number">6.1.1.</span> <span class="nav-text">（1）延迟与不一致问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%882%EF%BC%89%E6%95%B0%E6%8D%AE%E8%BF%87%E6%9C%9F%E9%97%AE%E9%A2%98"><span class="nav-number">6.1.2.</span> <span class="nav-text">（2）数据过期问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%883%EF%BC%89%E6%95%85%E9%9A%9C%E5%88%87%E6%8D%A2%E9%97%AE%E9%A2%98"><span class="nav-number">6.1.3.</span> <span class="nav-text">（3）故障切换问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%884%EF%BC%89%E6%80%BB%E7%BB%93"><span class="nav-number">6.1.4.</span> <span class="nav-text">（4）总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%A4%8D%E5%88%B6%E8%B6%85%E6%97%B6%E9%97%AE%E9%A2%98"><span class="nav-number">6.2.</span> <span class="nav-text">2. 复制超时问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%A4%8D%E5%88%B6%E4%B8%AD%E6%96%AD%E9%97%AE%E9%A2%98"><span class="nav-number">6.3.</span> <span class="nav-text">3. 复制中断问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%8D%E5%88%B6%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA"><span class="nav-number">6.3.1.</span> <span class="nav-text">复制缓冲区溢出</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%90%84%E5%9C%BA%E6%99%AF%E4%B8%8B%E5%A4%8D%E5%88%B6%E7%9A%84%E9%80%89%E6%8B%A9%E5%8F%8A%E4%BC%98%E5%8C%96%E6%8A%80%E5%B7%A7"><span class="nav-number">6.4.</span> <span class="nav-text">4. 各场景下复制的选择及优化技巧</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%881%EF%BC%89%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%BB%BA%E7%AB%8B%E5%A4%8D%E5%88%B6"><span class="nav-number">6.4.1.</span> <span class="nav-text">（1）第一次建立复制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%882%EF%BC%89%E4%B8%BB%E8%8A%82%E7%82%B9%E9%87%8D%E5%90%AF"><span class="nav-number">6.4.2.</span> <span class="nav-text">（2）主节点重启</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%883%EF%BC%89%E4%BB%8E%E8%8A%82%E7%82%B9%E9%87%8D%E5%90%AF"><span class="nav-number">6.4.3.</span> <span class="nav-text">（3）从节点重启</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%884%EF%BC%89%E7%BD%91%E7%BB%9C%E4%B8%AD%E6%96%AD"><span class="nav-number">6.4.4.</span> <span class="nav-text">（4）网络中断</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%A4%8D%E5%88%B6%E7%9B%B8%E5%85%B3%E7%9A%84%E9%85%8D%E7%BD%AE"><span class="nav-number">6.5.</span> <span class="nav-text">5. 复制相关的配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%881%EF%BC%89%E4%B8%8E%E4%B8%BB%E4%BB%8E%E8%8A%82%E7%82%B9%E9%83%BD%E6%9C%89%E5%85%B3%E7%9A%84%E9%85%8D%E7%BD%AE"><span class="nav-number">6.5.1.</span> <span class="nav-text">（1）与主从节点都有关的配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%882%EF%BC%89%E4%B8%BB%E8%8A%82%E7%82%B9%E7%9B%B8%E5%85%B3%E9%85%8D%E7%BD%AE"><span class="nav-number">6.5.2.</span> <span class="nav-text">（2）主节点相关配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%883%EF%BC%89%E4%BB%8E%E8%8A%82%E7%82%B9%E7%9B%B8%E5%85%B3%E9%85%8D%E7%BD%AE"><span class="nav-number">6.5.3.</span> <span class="nav-text">（3）从节点相关配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%8D%95%E6%9C%BA%E5%86%85%E5%AD%98%E5%A4%A7%E5%B0%8F%E9%99%90%E5%88%B6"><span class="nav-number">6.6.</span> <span class="nav-text">6. 单机内存大小限制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-info-Replication"><span class="nav-number">6.7.</span> <span class="nav-text">7. info Replication</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E6%80%BB%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">七、总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="undertow"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">undertow</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">80</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">undertow</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

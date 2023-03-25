@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.under2.cn","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="目录 [TOC]  首先介绍为什么加锁，什么悲观锁、乐观锁，然后再说明redis为什么能实现乐观锁？ 为什么要加锁？叨咕一句在使用一些工具、功能之前，都要明白他有什么作用和意义。不能为了学习而学习，为了使用而使用，也不能会了一样工具就到处使用。合适才是最好的，应该是为了解决某些问题而引入使用。这也是一种架构思想 锁存在的意义是什么呢模拟一种场景： 小明：代表——&gt;A线程或者说A客户端 小强：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis（四）实现乐观锁">
+<meta property="og:url" content="http://blog.under2.cn/2020/10/24/Redis%EF%BC%88%E5%9B%9B%EF%BC%89%E5%AE%9E%E7%8E%B0%E4%B9%90%E8%A7%82%E9%94%81-redis%E5%9B%9B%E5%AE%9E%E7%8E%B0%E4%B9%90%E8%A7%82%E9%94%81/index.html">
+<meta property="og:site_name" content="undertow &#39;s blog">
+<meta property="og:description" content="目录 [TOC]  首先介绍为什么加锁，什么悲观锁、乐观锁，然后再说明redis为什么能实现乐观锁？ 为什么要加锁？叨咕一句在使用一些工具、功能之前，都要明白他有什么作用和意义。不能为了学习而学习，为了使用而使用，也不能会了一样工具就到处使用。合适才是最好的，应该是为了解决某些问题而引入使用。这也是一种架构思想 锁存在的意义是什么呢模拟一种场景： 小明：代表——&gt;A线程或者说A客户端 小强：">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-10-24T11:29:26.663Z">
+<meta property="article:modified_time" content="2022-09-22T14:46:44.443Z">
+<meta property="article:author" content="undertow">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="锁">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://blog.under2.cn/2020/10/24/Redis%EF%BC%88%E5%9B%9B%EF%BC%89%E5%AE%9E%E7%8E%B0%E4%B9%90%E8%A7%82%E9%94%81-redis%E5%9B%9B%E5%AE%9E%E7%8E%B0%E4%B9%90%E8%A7%82%E9%94%81/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Redis（四）实现乐观锁 | undertow 's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="undertow 's blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <!-- 自定义右上角 github -->
+    <a target="_blank" rel="noopener" href="https://github.com/under-tow" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <!-- 自定义右上角 github -->
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">undertow 's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.under2.cn/2020/10/24/Redis%EF%BC%88%E5%9B%9B%EF%BC%89%E5%AE%9E%E7%8E%B0%E4%B9%90%E8%A7%82%E9%94%81-redis%E5%9B%9B%E5%AE%9E%E7%8E%B0%E4%B9%90%E8%A7%82%E9%94%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="undertow">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="undertow 's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis（四）实现乐观锁
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-10-24 19:29:26" itemprop="dateCreated datePublished" datetime="2020-10-24T19:29:26+08:00">2020-10-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-09-22 22:46:44" itemprop="dateModified" datetime="2022-09-22T22:46:44+08:00">2022-09-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><strong>目录</strong></p>
+<p>[TOC]</p>
+<hr>
+<p>首先介绍为什么加锁，什么悲观锁、乐观锁，然后再说明redis为什么能实现乐观锁？</p>
+<h2 id="为什么要加锁？"><a href="#为什么要加锁？" class="headerlink" title="为什么要加锁？"></a>为什么要加锁？</h2><h3 id="叨咕一句"><a href="#叨咕一句" class="headerlink" title="叨咕一句"></a>叨咕一句</h3><p>在使用一些工具、功能之前，都要明白他有什么作用和意义。<br>不能为了学习而学习，为了使用而使用，也不能会了一样工具就到处使用。<br>合适才是最好的，应该是为了解决某些问题而引入使用。这也是一种架构思想</p>
+<h3 id="锁存在的意义是什么呢"><a href="#锁存在的意义是什么呢" class="headerlink" title="锁存在的意义是什么呢"></a>锁存在的意义是什么呢</h3><p>模拟一种场景：</p>
+<p>小明：代表——&gt;<strong>A线程</strong>或者说A客户端</p>
+<p>小强：代表——&gt;<strong>B线程</strong>或者说B客户端</p>
+<p>他们是好朋友，共享一个银行账户，想去坐火车去存钱，目前只有一张火车票了：代表——&gt;<strong>共享资源</strong></p>
+<p><strong>在不加锁的情况下</strong>：</p>
+<p>小明和小强同时查询余票，他们都查询到了一张余票，然后几乎同时购买，结构全购买成功了，所以他们挤着同一个座位…（<strong>错误一</strong>）</p>
+<p>然后去银行存款，他们分别在两家银行存钱，都查询到账户余额是500，于是小明存了500（余额变成1000），小强在另一家银行存了100，银行操作成功结果 原来的1000被600<strong>覆盖</strong>掉了（<strong>错误二</strong>）</p>
+<p><strong>并发环境下典型的冲突</strong>：</p>
+<ul>
+<li><p><strong>脏读</strong>（错误一）：当一个事务读取其它完成一半事务的记录时，就会发生脏读取。例如：用户A,B看到的值都是1，用户B把值改为0，用户A读到的值仍为1。</p>
+</li>
+<li><p><strong>丢失更新</strong>（错误二）：一个事务的更新覆盖了其它事务的更新结果，就是所谓的更新丢失。例如：用户A把值从500改为1000，用户B把值从500改为600，则用户A丢失了他的更新。</p>
+</li>
+</ul>
+<p><strong>对于这种现象，就可以通过加锁来解决</strong>，比如使用（java中的synchronized，悲观锁）</p>
+<ol>
+<li>A、B读取的值都是1，那么在A修改值为0的时间范围内，先<strong>加锁</strong>，B此时是不能修改这个值的。</li>
+<li>在A修改完值等于0后，会<strong>释放锁</strong></li>
+<li>然后B才能修改值，B再加锁，并修改值等于-1，然后释放锁</li>
+</ol>
+<h2 id="悲观锁"><a href="#悲观锁" class="headerlink" title="悲观锁"></a>悲观锁</h2><p>总是假设最坏的情况，每次去拿数据的时候都认为别人会修改，所以每次在拿数据的时候都会上锁，这样别人想拿这个数据就会阻塞直到它拿到锁（<strong>共享资源每次只给一个线程使用，其它线程阻塞，用完后再把资源转让给其它线程</strong>）。传统的关系型数据库里边就用到了很多这种锁机制，比如行锁，表锁等，读锁，写锁等，都是在做操作之前先上锁。Java中<code>synchronized</code>和<code>ReentrantLock</code>等独占锁就是悲观锁思想的实现。</p>
+<h2 id="乐观锁"><a href="#乐观锁" class="headerlink" title="乐观锁"></a>乐观锁</h2><p>总是假设最好的情况，每次去拿数据的时候都认为别人不会修改，所以不会上锁，但是在更新的时候会判断一下在此期间别人有没有去更新这个数据，可以使用版本号机制和CAS算法实现。<strong>乐观锁适用于多读的应用类型，这样可以提高吞吐量</strong>，像数据库提供的类似于<strong>write_condition机制</strong>，其实都是提供的乐观锁。在Java中<code>java.util.concurrent.atomic</code>包下面的原子变量类就是使用了乐观锁的一种实现方式<strong>CAS</strong>实现的。</p>
+<h2 id="两种锁的使用场景"><a href="#两种锁的使用场景" class="headerlink" title="两种锁的使用场景"></a>两种锁的使用场景</h2><p>从上面对两种锁的介绍，我们知道两种锁各有优缺点，不可认为一种好于另一种，像<strong>乐观锁适用于写比较少的情况下（多读场景）</strong>，即冲突真的很少发生的时候，这样可以省去了锁的开销，加大了系统的整个吞吐量。但如果是多写的情况，一般会经常产生冲突，这就会导致上层应用会不断的进行retry，这样反倒是降低了性能，所以<strong>一般多写的场景下用悲观锁就比较合适。</strong></p>
+<h2 id="Redis的Watch命令"><a href="#Redis的Watch命令" class="headerlink" title="Redis的Watch命令"></a>Redis的Watch命令</h2><h3 id="watch有什么作用？"><a href="#watch有什么作用？" class="headerlink" title="watch有什么作用？"></a>watch有什么作用？</h3><p>Redis Watch 命令用于<strong>监视</strong>一个(或多个) key ，如果在<strong>事务执行（EXEC）之前</strong>这个(或这些) key <strong>被其他命令所改动</strong>，那么事务将<strong>被打断</strong>。</p>
+<p>基于<code>watch</code>命令的机制，就可以实现乐观锁的功能</p>
+<p>语法：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">WATCH key [key ...]</span><br></pre></td></tr></table></figure>
+
+<h3 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h3><ol>
+<li>客户端A，首先执行:</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; <span class="built_in">set</span> money 100  <span class="comment"># 设置money 为100</span></span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; watch money  <span class="comment"># 监视 money 对象</span></span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; multi <span class="comment"># 开启事务</span></span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; incrby money 20 <span class="comment"># 增加 money 20 ，存入队列</span></span><br><span class="line">QUEUED</span><br><span class="line">127.0.0.1:6379&gt; get money <span class="comment"># 获取 money ，存入队列</span></span><br><span class="line">QUEUED</span><br><span class="line"><span class="comment"># 先不执行事务</span></span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>客户端B:</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 客户端B 在 客户端A还没有执行事务前，设置money值为500</span></span><br><span class="line">127.0.0.1:6379&gt; <span class="built_in">set</span> money 500 </span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; get money <span class="comment"># 查看 money</span></span><br><span class="line"><span class="string">&quot;500&quot;</span></span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>客户端A，再执行:</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 然后 客户端A 再执行职务，</span></span><br><span class="line">127.0.0.1:6379&gt; <span class="built_in">exec</span></span><br><span class="line">(nil) <span class="comment"># 执行失败</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>以上面代码为例：如果事务正常执行了，想要下次的事务还监视这个key的话，需要再写一遍<code>watch money</code>,然后再开启事务<code>multi</code>，也就是要成对出现</p>
+</blockquote>
+<h2 id="UNWATCH"><a href="#UNWATCH" class="headerlink" title="UNWATCH"></a>UNWATCH</h2><p>取消 <a target="_blank" rel="noopener" href="http://redisdoc.com/transaction/watch.html#watch">WATCH</a> 命令对所有 key 的监视。</p>
+<p>如果在执行 <a target="_blank" rel="noopener" href="http://redisdoc.com/transaction/watch.html#watch">WATCH</a> 命令之后， <a target="_blank" rel="noopener" href="http://redisdoc.com/transaction/exec.html#exec">EXEC</a> 命令或 <a target="_blank" rel="noopener" href="http://redisdoc.com/transaction/discard.html#discard">DISCARD</a> 命令先被执行了的话，那么就不需要再执行 <a target="_blank" rel="noopener" href="http://redisdoc.com/transaction/unwatch.html#unwatch">UNWATCH</a> 了。</p>
+<p>因为 <a target="_blank" rel="noopener" href="http://redisdoc.com/transaction/exec.html#exec">EXEC</a> 命令会执行事务，因此 <a target="_blank" rel="noopener" href="http://redisdoc.com/transaction/watch.html#watch">WATCH</a> 命令的效果已经产生了；而 <a target="_blank" rel="noopener" href="http://redisdoc.com/transaction/discard.html#discard">DISCARD</a> 命令在取消事务的同时也会取消所有对 key 的监视，因此这两个命令执行之后，就没有必要执行 <a target="_blank" rel="noopener" href="http://redisdoc.com/transaction/unwatch.html#unwatch">UNWATCH</a> 了。</p>
+<hr>
+<p>参考文章：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_34337272/article/details/81072874">面试必备之乐观锁与悲观锁</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Redis/" rel="tag"># Redis</a>
+              <a href="/tags/%E9%94%81/" rel="tag"># 锁</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/10/24/Ribbon%E3%80%81Feign%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F-ribbonfeign%E6%98%AF%E4%BB%80%E4%B9%88/" rel="prev" title="Ribbon、Feign是什么？">
+      <i class="fa fa-chevron-left"></i> Ribbon、Feign是什么？
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/10/25/Redis%EF%BC%88%E4%BA%94%20%EF%BC%89Jedis%E7%9A%84%E4%BD%BF%E7%94%A8-redis%E4%BA%94jedis%E7%9A%84%E4%BD%BF%E7%94%A8/" rel="next" title="Redis（五 ）Jedis的使用">
+      Redis（五 ）Jedis的使用 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%8A%A0%E9%94%81%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">为什么要加锁？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%A8%E5%92%95%E4%B8%80%E5%8F%A5"><span class="nav-number">1.1.</span> <span class="nav-text">叨咕一句</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%81%E5%AD%98%E5%9C%A8%E7%9A%84%E6%84%8F%E4%B9%89%E6%98%AF%E4%BB%80%E4%B9%88%E5%91%A2"><span class="nav-number">1.2.</span> <span class="nav-text">锁存在的意义是什么呢</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%82%B2%E8%A7%82%E9%94%81"><span class="nav-number">2.</span> <span class="nav-text">悲观锁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%90%E8%A7%82%E9%94%81"><span class="nav-number">3.</span> <span class="nav-text">乐观锁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%A4%E7%A7%8D%E9%94%81%E7%9A%84%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">4.</span> <span class="nav-text">两种锁的使用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis%E7%9A%84Watch%E5%91%BD%E4%BB%A4"><span class="nav-number">5.</span> <span class="nav-text">Redis的Watch命令</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#watch%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F"><span class="nav-number">5.1.</span> <span class="nav-text">watch有什么作用？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B"><span class="nav-number">5.2.</span> <span class="nav-text">实例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UNWATCH"><span class="nav-number">6.</span> <span class="nav-text">UNWATCH</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="undertow"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">undertow</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">80</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">undertow</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
