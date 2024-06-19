@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="undertow" />
+
+    <!--  统计鸟  -->
+  <script type="text/javascript" src="//api.tongjiniao.com/c?_=648949077803503616" async></script>
+
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  <meta name="description" content="description" />
+  
+  
+  
+  <title>
+    
+      Docker 
+      
+      
+      |
+    
+     undertow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/dragon.png">
+    <link rel="icon" href="/images/dragon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.1.1"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/dragon.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">undertow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">Docker</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2022-09-22 22:43:13
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Docker/" title="Docker">
+                    #Docker
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <p>Docker</p>
+<p>[TOC]</p>
+<h2 id="1-Docker-为什么会出现？"><a href="#1-Docker-为什么会出现？" class="headerlink" title="1. Docker 为什么会出现？"></a>1. Docker 为什么会出现？</h2><p>一款产品：开发-上线 两套环境 ！应用环境， 应用配置！</p>
+<p>可以一个产品在开发环境可以正常运行！版本更新导致运维环境不可用！对运维人员考验比较大！</p>
+<p>开发即运维！</p>
+<p>环境配置十分的环境，配一个机器都要部署环境！（集群Redis..ES..Hadoop）费事费力</p>
+<p>发布一个项目（Jar + （Redis 、 MYSQL 、JDK、ES…） ）配置太麻烦了，不能跨平台</p>
+<p>开发Windows，最后发布在Linux！</p>
+<p>传统：开发生产jar，然后交给运维！</p>
+<p>现在：开发打包部署上线，一套流程做完！</p>
+<p>Docker给以上的问题：提出了解决方案！</p>
+<p>比如安卓应用：</p>
+<p>apk - 应用商店 - 下载 - 安装 即可用！</p>
+<p>java - jar - 打包项目带上环境 （镜像） + Docker（相当于商店） - 之后下载运行即可</p>
+<h2 id="2-Docoker"><a href="#2-Docoker" class="headerlink" title="2. Docoker"></a>2. Docoker</h2><p>docker的思想来源于集装箱</p>
+<p>Jre - 多个应用 （端口冲突） - 原来都是交叉的</p>
+<p>隔离 - Docker核心思想</p>
+<p>传统：水果 - 毒药</p>
+<p>Docker：水果 | 毒药</p>
+<p>Docker通过隔离机制，可以将服务器利用到极致！</p>
+<p>本质：所有的技术都是因为出现了一些问题，我们需要去解决才去学习！</p>
+<p>docker对比VM十分的小巧</p>
+<blockquote>
+<p>vm 虚拟机：</p>
+<p>在Windows中装了一个Vmware通过这个软件我们可以虚拟出来一台或者多台电脑！笨重！</p>
+<p>好几个G，启动 几分钟</p>
+<p>docker：隔离，镜像（最核心的环境 4M + Jdk+mysql） 十分 的轻巧，秒级启动</p>
+</blockquote>
+<p>基于go语言</p>
+<h2 id="3-Docker模型"><a href="#3-Docker模型" class="headerlink" title="3. Docker模型"></a>3. Docker模型</h2><p><img src="https://ss3.bdstatic.com/70cFv8Sh_Q1YnxGkpoWK1HF6hhy/it/u=3715698682,4278914997&fm=26&gp=0.jpg" alt="img"></p>
+<p><strong>镜像(image)</strong></p>
+<p>在镜像就好比是一个模板，可以通过这个模板来创建容器服务，tomcat镜像&#x3D;&#x3D;&gt; run &#x3D;&#x3D;&gt; tomcat01 容器(提供服务器)，通过这个镜像可以创建多个容器(最终服务运行或者项目运行就是在容器中的)。</p>
+<p><strong>容器(container)</strong></p>
+<p>Docker利用容器技术，独立运行一个或者一个组应用，通过镜像来创建的。<br>启动，停止，删除，基本命令！<br>目前就可以把这个容器理解为就是一个简易的linux系统</p>
+<p><strong>仓库(repository)</strong></p>
+<p>仓库就是存放镜像的地方！ 还原屏幕<br>仓库分为公有仓库和私有仓库！<br>Docker Hub I<br>阿里云…都有容器服务器</p>
+<h2 id="4-Docker安装"><a href="#4-Docker安装" class="headerlink" title="4. Docker安装"></a>4. Docker安装</h2><blockquote>
+<p>可以参考：<a target="_blank" rel="noopener" href="https://docs.docker.com/engine/install/centos/">https://docs.docker.com/engine/install/centos/</a></p>
+</blockquote>
+<h3 id="4-1-前提"><a href="#4-1-前提" class="headerlink" title="4.1 前提"></a>4.1 前提</h3><ul>
+<li>Linux的基础</li>
+<li>Linux服务器（这里以CentOS系统为例）</li>
+</ul>
+<p>环境查看：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#查看内核 需要 3.10 以上版本</span></span><br><span class="line">[root@hopestation ~]<span class="comment"># uname -r</span></span><br><span class="line">3.10.0-1062.18.1.el7.x86_64</span><br><span class="line"><span class="comment">#系统版本</span></span><br><span class="line">[root@hopestation ~]<span class="comment"># cat /etc/os-release</span></span><br><span class="line">NAME=<span class="string">&quot;CentOS Linux&quot;</span></span><br><span class="line">VERSION=<span class="string">&quot;7 (Core)&quot;</span></span><br><span class="line">ID=<span class="string">&quot;centos&quot;</span></span><br><span class="line">ID_LIKE=<span class="string">&quot;rhel fedora&quot;</span></span><br><span class="line">VERSION_ID=<span class="string">&quot;7&quot;</span></span><br><span class="line">PRETTY_NAME=<span class="string">&quot;CentOS Linux 7 (Core)&quot;</span></span><br><span class="line">ANSI_COLOR=<span class="string">&quot;0;31&quot;</span></span><br><span class="line">CPE_NAME=<span class="string">&quot;cpe:/o:centos:centos:7&quot;</span></span><br><span class="line">HOME_URL=<span class="string">&quot;https://www.centos.org/&quot;</span></span><br><span class="line">BUG_REPORT_URL=<span class="string">&quot;https://bugs.centos.org/&quot;</span></span><br><span class="line"></span><br><span class="line">CENTOS_MANTISBT_PROJECT=<span class="string">&quot;CentOS-7&quot;</span></span><br><span class="line">CENTOS_MANTISBT_PROJECT_VERSION=<span class="string">&quot;7&quot;</span></span><br><span class="line">REDHAT_SUPPORT_PRODUCT=<span class="string">&quot;centos&quot;</span></span><br><span class="line">REDHAT_SUPPORT_PRODUCT_VERSION=<span class="string">&quot;7&quot;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-2-安装"><a href="#4-2-安装" class="headerlink" title="4.2 安装"></a>4.2 安装</h3><p>1 卸载已安装Docker组件（如果没有安装过Dokcer，跳过这一步）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">yum remove docker \</span><br><span class="line">                 docker-client \</span><br><span class="line">                 docker-client-latest \</span><br><span class="line">                 docker-common \</span><br><span class="line">                 docker-latest \</span><br><span class="line">                 docker-latest-logrotate \</span><br><span class="line">                 docker-logrotate \</span><br><span class="line">                 docker-engine</span><br></pre></td></tr></table></figure>
+
+<p>2 安装yum软件包</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install -y yum-utils</span><br></pre></td></tr></table></figure>
+
+<p>3 设置阿里云镜像仓库</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
+
+<p>4 更新软件包索引</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum makecache fast</span><br></pre></td></tr></table></figure>
+
+<p>5 安装Docker CE</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 执行过程中 需要进行两次确认 输入 y 回车即可</span></span><br><span class="line">yum install docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
+
+<p>6 启动Docker</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<p>7 查看Docker 版本</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">docker version</span><br><span class="line"><span class="comment">#如果出现一下内容就证明安装成功了</span></span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           20.10.0</span><br><span class="line"> API version:       1.41</span><br><span class="line"> Go version:        go1.13.15</span><br><span class="line"> Git commit:        7287ab3</span><br><span class="line"> Built:             Tue Dec  8 18:57:35 2020</span><br><span class="line"> OS/Arch:           linux/amd64</span><br><span class="line"> Context:           default</span><br><span class="line"> Experimental:      <span class="literal">true</span></span><br><span class="line"></span><br><span class="line">Server: Docker Engine - Community</span><br><span class="line"> Engine:</span><br><span class="line">  Version:          20.10.0</span><br><span class="line">  API version:      1.41 (minimum version 1.12)</span><br><span class="line">  Go version:       go1.13.15</span><br><span class="line">  Git commit:       eeddea2</span><br><span class="line">  Built:            Tue Dec  8 18:56</span><br><span class="line">  ....</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-3-HelloWorld"><a href="#4-3-HelloWorld" class="headerlink" title="4.3 HelloWorld"></a>4.3 HelloWorld</h3><p>1 运行helloworld镜像</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">[root@hopestation ~]<span class="comment">#  docker run hello-world</span></span><br><span class="line"><span class="comment">#一开始会提示本地没有找到</span></span><br><span class="line">Unable to find image <span class="string">&#x27;hello-world:latest&#x27;</span> locally</span><br><span class="line"><span class="comment"># 然后等待一下 他就会 去远程拉取</span></span><br><span class="line">latest: Pulling from library/hello-world</span><br><span class="line">0e03bdcc26d7: Pull complete </span><br><span class="line">Digest: sha256:1a523af650137b8accdaed439c17d684df61ee4d74feac151b5b337bd29e7eec</span><br><span class="line">Status: Downloaded newer image <span class="keyword">for</span> hello-world:latest</span><br><span class="line"><span class="comment"># 运行成功 输出 Hello from Docker!</span></span><br><span class="line">Hello from Docker!</span><br><span class="line">This message shows that your installation appears to be working correctly.</span><br><span class="line"></span><br><span class="line">To generate this message, Docker took the following steps:</span><br><span class="line"> 1. The Docker client contacted the Docker daemon.</span><br><span class="line"> 2. The Docker daemon pulled the <span class="string">&quot;hello-world&quot;</span> image from the Docker Hub.</span><br><span class="line">    (amd64)</span><br><span class="line"> 3. The Docker daemon created a new container from that image <span class="built_in">which</span> runs the</span><br><span class="line">    executable that produces the output you are currently reading.</span><br><span class="line"> 4. The Docker daemon streamed that output to the Docker client, <span class="built_in">which</span> sent it</span><br><span class="line">    to your terminal.</span><br><span class="line"></span><br><span class="line">To try something more ambitious, you can run an Ubuntu container with:</span><br><span class="line"> $ docker run -it ubuntu bash</span><br><span class="line"></span><br><span class="line">Share images, automate workflows, and more with a free Docker ID:</span><br><span class="line"> https://hub.docker.com/</span><br><span class="line"></span><br><span class="line">For more examples and ideas, visit:</span><br><span class="line"> https://docs.docker.com/get-started/</span><br></pre></td></tr></table></figure>
+
+<p>2 查看所有镜像</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@hopestation ~]<span class="comment"># docker images</span></span><br><span class="line">REPOSITORY    TAG       IMAGE ID       CREATED         SIZE</span><br><span class="line"><span class="comment"># 这里有我们的helloworld</span></span><br><span class="line">hello-world   latest    bf756fb1ae65   11 months ago   13.3kB</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-4-镜像加速"><a href="#4-4-镜像加速" class="headerlink" title="4.4 镜像加速"></a>4.4 镜像加速</h3><p><img src="https://hopestation.top/upload/2020/12/docker01-3b37e7d5e3834a72a9828218bdbcc201.png" alt="docker01"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#创建目录</span></span><br><span class="line">sudo <span class="built_in">mkdir</span> -p /etc/docker</span><br><span class="line">sudo <span class="built_in">tee</span> /etc/docker/daemon.json &lt;&lt;-<span class="string">&#x27;EOF&#x27;</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="string">&quot;registry-mirrors&quot;</span>: [<span class="string">&quot;https://xxxxxx.mirror.aliyuncs.com&quot;</span>]</span><br><span class="line">&#125;</span><br><span class="line">EOF</span><br><span class="line">sudo systemctl daemon-reload</span><br><span class="line">sudo systemctl restart docker</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-5-卸载"><a href="#4-5-卸载" class="headerlink" title="4.5 卸载"></a>4.5 卸载</h3><ol>
+<li><p>卸载Docker Engine，CLI和Containerd软件包：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo yum remove docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>主机上的映像，容器，卷或自定义配置文件不会自动删除。要删除所有图像，容器和卷：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo rm -rf /var/lib/docker</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>您必须手动删除所有已编辑的配置文件。</p>
+<h2 id="5-Docker-run流程"><a href="#5-Docker-run流程" class="headerlink" title="5. Docker run流程"></a>5. Docker run流程</h2><p><img src="https://hopestation.top/upload/2020/12/docker02-b4c07828aa4b4b5ebdcaf645cad9c9a3.png" alt="docker02"></p>
+<p>找不到时的结果：：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@hopestation ~]<span class="comment">#  docker run eq1dqw312</span></span><br><span class="line"><span class="comment">#本地没找到</span></span><br><span class="line">Unable to find image <span class="string">&#x27;helloyue666:latest&#x27;</span> locally</span><br><span class="line"><span class="comment">#远程也没找到</span></span><br><span class="line">docker: Error response from daemon: pull access denied <span class="keyword">for</span> eq1dqw312, </span><br><span class="line">repository does not exist or may require <span class="string">&#x27;docker login&#x27;</span>: denied: requested access to the resource is denied.</span><br><span class="line">See <span class="string">&#x27;docker run --help&#x27;</span>.</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="6-Docker基本原理"><a href="#6-Docker基本原理" class="headerlink" title="6. Docker基本原理"></a>6. Docker基本原理</h2><p>Docker是一个Client-Server结构的系统，Docker守护进程运行在主机上， 然后通过Socket连接从客户端访问，守护进程从客户端接受命令并管理运行在主机上的容器。 容器，是一个运行时环境，就是我们前面说到的集装箱。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200112215409745.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2NvbGRfX19wbGF5,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<p><strong>为什么Docker比VM等虚拟机快</strong></p>
+<ol>
+<li>docker有着比虚拟机更少的抽象层。由亍docker不需要Hypervisor实现硬件资源虚拟化,运行在docker容器上的程序直接使用的都是实际物理机的硬件资源。因此在CPU、内存利用率上docker将会在效率上有明显优势。</li>
+<li>docker利用的是宿主机的内核,而不需要Guest OS。因此,当新建一个容器时,docker不需要和虚拟机一样重新加载一个操作系统内核。仍而避免引寻、加载操作系统内核返个比较费时费资源的过程,当新建一个虚拟机时,虚拟机软件需要加载Guest OS,返个新建过程是分钟级别的。而docker由于直接利用宿主机的操作系统,则省略了返个过程,因此新建一个docker容器只需要几秒钟。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Docker容器</th>
+<th>虚拟机（VM）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>操作系统</td>
+<td>与宿主机共享OS</td>
+<td>宿主机OS上运行宿主机OS</td>
+</tr>
+<tr>
+<td>存储大小</td>
+<td>镜像小，便于存储与传输</td>
+<td>镜像庞大（vmdk等）</td>
+</tr>
+<tr>
+<td>运行性能</td>
+<td>几乎无额外性能损失</td>
+<td>操作系统额外的cpu、内存消耗</td>
+</tr>
+<tr>
+<td>移植性</td>
+<td>轻便、灵活、适用于Linux</td>
+<td>笨重、与虚拟化技术耦合度高</td>
+</tr>
+<tr>
+<td>硬件亲和性</td>
+<td>面向软件开发者</td>
+<td>面向硬件运维者</td>
+</tr>
+</tbody></table>
+<h2 id="7-Docker命令"><a href="#7-Docker命令" class="headerlink" title="7. Docker命令"></a>7. Docker命令</h2><p><strong>帮助命令</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#显示版本信息</span></span><br><span class="line">docker version</span><br><span class="line"><span class="comment">#显示cick</span></span><br><span class="line">docker info</span><br><span class="line">docker 命令 --<span class="built_in">help</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>docker images 镜像命令</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 查看所有本地的主机上的镜像</span></span><br><span class="line">docker images</span><br><span class="line">[root@hopestation ~]<span class="comment"># docker images</span></span><br><span class="line">REPOSITORY    TAG       IMAGE ID       CREATED         SIZE</span><br><span class="line">hello-world   latest    bf756fb1ae65   11 months ago   13.3kB</span><br><span class="line"><span class="comment"># 解释</span></span><br><span class="line">REPOSITORY 镜像的仓库源</span><br><span class="line">TAG 镜像的标签</span><br><span class="line">IMAGE ID 镜像的<span class="built_in">id</span></span><br><span class="line">CREATED 镜像的创建时间</span><br><span class="line">SIZE 镜像的大小</span><br><span class="line"><span class="comment"># 可选项</span></span><br><span class="line">-a， --a11 <span class="comment"># 列出所有镜像</span></span><br><span class="line">-q，--quiet <span class="comment">#只显示镜像的id</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>docker search 搜索镜像</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 搜索镜像</span></span><br><span class="line">[root@hopestation ~]<span class="comment"># docker search mysql</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 可选项，通过搜藏来过滤 搜索出来的镜像就是STARS大于3000的</span></span><br><span class="line">[root@hopestation ~]<span class="comment"># docker search mysql --filter=stars=3000</span></span><br><span class="line">NAME      DESCRIPTION                                     STARS     OFFICIAL   AUTOMATED</span><br><span class="line">mysql     MySQL is a widely used, open-source relation…   10247     [OK]       </span><br><span class="line">mariadb   MariaDB is a community-developed fork of MyS…   3785      [OK]       </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2021/01/24/%E8%81%8A%E8%81%8A%20Elasticsearch%20%E7%9A%84%E5%80%92%E6%8E%92%E7%B4%A2%E5%BC%95%EF%BC%88%E8%BD%AC%EF%BC%89-%E8%81%8A%E8%81%8Aelasticsearch%E7%9A%84%E5%80%92%E6%8E%92%E7%B4%A2%E5%BC%95%E8%BD%AC/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2022-09-22 22:43:13
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Docker/" title="Docker">
+                        #Docker
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2021/01/24/SpringBoot%EF%BC%88%E4%B8%80%EF%BC%89%E9%85%8D%E7%BD%AE%E4%BB%8B%E7%BB%8D%E3%80%81%E9%A1%B9%E7%9B%AE%E6%90%AD%E5%BB%BA-springboot%E4%B8%80%E9%85%8D%E7%BD%AE%E4%BB%8B%E7%BB%8D%E9%A1%B9%E7%9B%AE%E6%90%AD%E5%BB%BA/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Docker-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E5%87%BA%E7%8E%B0%EF%BC%9F"><span class="toc-text">1. Docker 为什么会出现？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Docoker"><span class="toc-text">2. Docoker</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Docker%E6%A8%A1%E5%9E%8B"><span class="toc-text">3. Docker模型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Docker%E5%AE%89%E8%A3%85"><span class="toc-text">4. Docker安装</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E5%89%8D%E6%8F%90"><span class="toc-text">4.1 前提</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E5%AE%89%E8%A3%85"><span class="toc-text">4.2 安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-HelloWorld"><span class="toc-text">4.3 HelloWorld</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-%E9%95%9C%E5%83%8F%E5%8A%A0%E9%80%9F"><span class="toc-text">4.4 镜像加速</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-5-%E5%8D%B8%E8%BD%BD"><span class="toc-text">4.5 卸载</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Docker-run%E6%B5%81%E7%A8%8B"><span class="toc-text">5. Docker run流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-Docker%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="toc-text">6. Docker基本原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-Docker%E5%91%BD%E4%BB%A4"><span class="toc-text">7. Docker命令</span></a></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/under-tow">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/under-tow">Copyright © 2024 undertow</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+  <div class="footer-views">
+      <span id="busuanzi_container_site_pv" style='display:none'>
+          共<span id="busuanzi_value_site_uv"></span>位伙伴访问了本站<span id="busuanzi_value_site_pv"></span>次
+      </span>
+  <div>
+</div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + Docker + '&url=' + https%3A%2F%2Funder2.cn%2F2021%2F01%2F24%2FDocker-docker%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://under2.cn/2021/01/24/Docker-docker/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>

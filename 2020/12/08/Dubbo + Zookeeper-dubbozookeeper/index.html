@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="undertow" />
+
+    <!--  统计鸟  -->
+  <script type="text/javascript" src="//api.tongjiniao.com/c?_=648949077803503616" async></script>
+
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  <meta name="description" content="description" />
+  
+  
+  
+  <title>
+    
+      Dubbo + Zookeeper 
+      
+      
+      |
+    
+     undertow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/dragon.png">
+    <link rel="icon" href="/images/dragon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.1.1"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/dragon.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">undertow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">Dubbo + Zookeeper</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2022-09-22 22:43:16
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Dubbo/" title="Dubbo">
+                    #Dubbo
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <h1 id="Dubbo"><a href="#Dubbo" class="headerlink" title="Dubbo"></a>Dubbo</h1><p>[TOC]</p>
+<hr>
+<blockquote>
+<p>本文可能有点长，之后可能会像其他文章一样做个拆分</p>
+</blockquote>
+<h2 id="1-背景"><a href="#1-背景" class="headerlink" title="1. 背景"></a>1. 背景</h2><p>网站应用的演进：随着互联网的发展，网站应用的规模不断扩大，常规的垂直应用架构已无法应对，分布式服务架构以及流动计算架构势在必行，亟需一个治理系统确保架构有条不紊的演进。</p>
+<p><img src="http://dubbo.apache.org/imgs/user/dubbo-architecture-roadmap.jpg" alt="image"></p>
+<h3 id="单一应用架构"><a href="#单一应用架构" class="headerlink" title="单一应用架构"></a>单一应用架构</h3><p>当网站流量很小时，只需一个应用，将所有功能都部署在一起，以减少部署节点和成本。此时，用于简化增删改查工作量的数据访问框架(ORM)是关键。</p>
+<h3 id="垂直应用架构"><a href="#垂直应用架构" class="headerlink" title="垂直应用架构"></a>垂直应用架构</h3><p>当访问量逐渐增大，单一应用增加机器带来的加速度越来越小，提升效率的方法之一是将应用拆成互不相干的几个应用，以提升效率。此时，用于加速前端页面开发的Web框架(MVC)是关键。</p>
+<h3 id="分布式服务架构"><a href="#分布式服务架构" class="headerlink" title="分布式服务架构"></a>分布式服务架构</h3><p>当垂直应用越来越多，应用之间交互不可避免，将核心业务抽取出来，作为独立的服务，逐渐形成稳定的服务中心，使前端应用能更快速的响应多变的市场需求。此时，用于提高业务复用及整合的分布式服务框架(RPC)是关键。</p>
+<h3 id="流动计算架构"><a href="#流动计算架构" class="headerlink" title="流动计算架构"></a>流动计算架构</h3><p>当服务越来越多，容量的评估，小服务资源的浪费等问题逐渐显现，此时需增加一个调度中心基于访问压力实时管理集群容量，提高集群利用率。此时，用于提高机器利用率的资源调度和治理中心(SOA)是关键。</p>
+<h2 id="2-Zookeeper安装"><a href="#2-Zookeeper安装" class="headerlink" title="2. Zookeeper安装"></a>2. Zookeeper安装</h2><blockquote>
+<p>介绍的是Windows系统的安装。</p>
+</blockquote>
+<h3 id="2-1-下载"><a href="#2-1-下载" class="headerlink" title="2.1 下载"></a>2.1 下载</h3><p>Dubbo官网<strong>推荐使用</strong>Zookeeper来作为注册中心。先来安装一下Zookeeper</p>
+<p><img src="https://hopestation.top/upload/2020/12/zk01-45a4953ba8a94288956534b951cfbd01.png" alt="zk01"></p>
+<p>点击完 Download后，选择稳定并且最新的版本下载</p>
+<p><img src="https://hopestation.top/upload/2020/12/zk02-8e8cbc4c43744ca784fc170344ba4558.png" alt="zk02"></p>
+<h3 id="2-2-解压"><a href="#2-2-解压" class="headerlink" title="2.2 解压"></a>2.2 解压</h3><p>下载的是一个压缩包，解压后。在该目录下新建一个<code>data</code>文件夹</p>
+<p><img src="https://hopestation.top/upload/2020/12/zk04-4d9d7003a1234061b283de372af0c9c7.png" alt="zk04"></p>
+<p>然后在<code>conf</code>目录下，将<code>zoo_sample.cfg</code>，复制一份命名为<code>zoo.cfg</code></p>
+<p><img src="https://hopestation.top/upload/2020/12/zk03-ccb458291c4f49d6833f3462a9d53d70.png" alt="zk03"></p>
+<p>修改<code>zoo.cfg</code>中<code>dataDir</code>的内容为刚刚建立的文件夹</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># the directory where the snapshot is stored.</span></span><br><span class="line"><span class="comment"># do not use /tmp for storage, /tmp here is just </span></span><br><span class="line"><span class="comment"># example sakes.</span></span><br><span class="line">dataDir=../data</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-3-运行"><a href="#2-3-运行" class="headerlink" title="2.3 运行"></a>2.3 运行</h3><ol>
+<li>在解压目录中的bin目录下运行<code>zkServer.cmd</code>，Zookeeper服务</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">E:\apache-zookeeper-3.6.2-bin\apache-zookeeper-3.6.2-bin\bin&gt;zkServer.cmd</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>需要安装JDK并且环境变量里有<code>JAVA_HOME</code>，不然会提示<code>Java home is not set</code> </p>
+</blockquote>
+<ol start="2">
+<li>在解压目录中的bin目录下运行<code>zkCli.cmd</code>，Zookeeper客户端</li>
+</ol>
+<p>输入点命令测试一下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">WATCHER::</span><br><span class="line">WatchedEvent state:SyncConnected <span class="built_in">type</span>:None path:null</span><br><span class="line">[zk: localhost:2181(CONNECTED) 0] get /</span><br><span class="line">[zk: localhost:2181(CONNECTED) 1] <span class="built_in">ls</span> /</span><br><span class="line">[zookeeper]</span><br><span class="line">[zk: localhost:2181(CONNECTED) 2] create -e /hope 123456</span><br><span class="line">Created /hope</span><br><span class="line">[zk: localhost:2181(CONNECTED) 3] <span class="built_in">ls</span></span><br><span class="line"><span class="built_in">ls</span> [-s] [-w] [-R] path</span><br><span class="line">[zk: localhost:2181(CONNECTED) 4] <span class="built_in">ls</span> /</span><br><span class="line">[hope, zookeeper]</span><br><span class="line">[zk: localhost:2181(CONNECTED) 5] get /hope</span><br><span class="line">123456</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="3-HelloWorld"><a href="#3-HelloWorld" class="headerlink" title="3. HelloWorld"></a>3. HelloWorld</h2><blockquote>
+<p>编写一个Dubbo的服务调用例子，此处参考了<a target="_blank" rel="noopener" href="https://blog.csdn.net/hemin1003/article/details/96483573">此篇文章</a></p>
+</blockquote>
+<p>pom</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.alibaba<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>dubbo<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.zookeeper<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>zookeeper<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-1-服务提供者"><a href="#3-1-服务提供者" class="headerlink" title="3.1 服务提供者"></a>3.1 服务提供者</h3><h4 id="3-1-1-提供者-Service"><a href="#3-1-1-提供者-Service" class="headerlink" title="3.1.1 提供者 Service"></a>3.1.1 提供者 Service</h4><p>提供的service方法</p>
+<ul>
+<li><code>DemoService</code>  接口</li>
+<li><code>DemoServiceImpl</code>  实现类</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//实现类</span></span><br><span class="line"><span class="keyword">package</span> com.md.demo.service;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DemoServiceImpl</span> <span class="keyword">implements</span> <span class="title class_">DemoService</span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> String <span class="title function_">sayHello</span><span class="params">(String name)</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="string">&quot;Welcome to Minbo&#x27;s Dubbo demo, Hello &quot;</span> + name;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//接口</span></span><br><span class="line"><span class="keyword">package</span> com.md.demo.service;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">DemoService</span> &#123;</span><br><span class="line">	String <span class="title function_">sayHello</span><span class="params">(String name)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h4 id="3-1-2-提供者-Xml"><a href="#3-1-2-提供者-Xml" class="headerlink" title="3.1.2 提供者 Xml"></a>3.1.2 提供者 Xml</h4><p>编写<code>src\main\resources\providers.xml</code>文件</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;UTF-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">beans</span> <span class="attr">xmlns</span>=<span class="string">&quot;http://www.springframework.org/schema/beans&quot;</span></span></span><br><span class="line"><span class="tag">	<span class="attr">xmlns:xsi</span>=<span class="string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span></span></span><br><span class="line"><span class="tag">	<span class="attr">xmlns:dubbo</span>=<span class="string">&quot;http://code.alibabatech.com/schema/dubbo&quot;</span></span></span><br><span class="line"><span class="tag">	<span class="attr">xsi:schemaLocation</span>=<span class="string">&quot;http://www.springframework.org/schema/beans</span></span></span><br><span class="line"><span class="string"><span class="tag">       http://www.springframework.org/schema/beans/spring-beans.xsd</span></span></span><br><span class="line"><span class="string"><span class="tag">       http://code.alibabatech.com/schema/dubbo</span></span></span><br><span class="line"><span class="string"><span class="tag">       http://code.alibabatech.com/schema/dubbo/dubbo.xsd&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">&lt;!-- 配置可参考 http://dubbo.io/User+Guide-zh.htm --&gt;</span></span><br><span class="line">	<span class="comment">&lt;!-- 服务提供方应用名，用于计算依赖关系 --&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">dubbo:application</span> <span class="attr">name</span>=<span class="string">&quot;spring-boot2-dubbo-provider&quot;</span> <span class="attr">owner</span>=<span class="string">&quot;spring-boot2-dubbo-provider&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">&lt;!-- 定义 zookeeper 注册中心地址及协议 --&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">dubbo:registry</span> <span class="attr">protocol</span>=<span class="string">&quot;zookeeper&quot;</span> <span class="attr">address</span>=<span class="string">&quot;localhost:2181&quot;</span> <span class="attr">client</span>=<span class="string">&quot;zkclient&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">&lt;!-- 定义 Dubbo 协议名称及使用的端口，dubbo 协议缺省端口为 20880，如果配置为 -1 或者没有配置 port，则会分配一个没有被占用的端口 --&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">dubbo:protocol</span> <span class="attr">name</span>=<span class="string">&quot;dubbo&quot;</span> <span class="attr">port</span>=<span class="string">&quot;-1&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">&lt;!-- 声明需要暴露的服务接口 --&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">dubbo:service</span> <span class="attr">interface</span>=<span class="string">&quot;com.md.demo.service.DemoService&quot;</span> <span class="attr">ref</span>=<span class="string">&quot;demoService&quot;</span> <span class="attr">timeout</span>=<span class="string">&quot;10000&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">&lt;!-- 和本地 bean 一样实现服务 --&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;demoService&quot;</span> <span class="attr">class</span>=<span class="string">&quot;com.md.demo.service.DemoServiceImpl&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">beans</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-服务消费者"><a href="#3-2-服务消费者" class="headerlink" title="3.2 服务消费者"></a>3.2 服务消费者</h3><h4 id="3-2-1-调用提供者的Service"><a href="#3-2-1-调用提供者的Service" class="headerlink" title="3.2.1 调用提供者的Service"></a>3.2.1 调用提供者的Service</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 测试用的 Controller 类；</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Controller</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TestController</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Autowired</span></span><br><span class="line">	<span class="keyword">private</span> DemoService demoService;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * 测试 JSON 接口；</span></span><br><span class="line"><span class="comment">	 * </span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@param</span> name 名字</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="meta">@ResponseBody</span></span><br><span class="line">	<span class="meta">@RequestMapping(&quot;/test&quot;)</span></span><br><span class="line">	<span class="keyword">public</span> JsonResult <span class="title function_">testJson</span><span class="params">(String name)</span> &#123;</span><br><span class="line">        <span class="comment">//调用 服务提供者的方法</span></span><br><span class="line">		<span class="type">String</span> <span class="variable">result</span> <span class="operator">=</span> <span class="built_in">this</span>.demoService.sayHello(name);</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">JsonResult</span>(ResultCode.SUCCESS, result);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="3-2-2-消费者-Xml"><a href="#3-2-2-消费者-Xml" class="headerlink" title="3.2.2 消费者 Xml"></a>3.2.2 消费者 Xml</h4><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;UTF-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">beans</span> <span class="attr">xmlns</span>=<span class="string">&quot;http://www.springframework.org/schema/beans&quot;</span></span></span><br><span class="line"><span class="tag">   <span class="attr">xmlns:xsi</span>=<span class="string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span> <span class="attr">xmlns:dubbo</span>=<span class="string">&quot;http://code.alibabatech.com/schema/dubbo&quot;</span></span></span><br><span class="line"><span class="tag">   <span class="attr">xsi:schemaLocation</span>=<span class="string">&quot;http://www.springframework.org/schema/beans</span></span></span><br><span class="line"><span class="string"><span class="tag">       http://www.springframework.org/schema/beans/spring-beans.xsd</span></span></span><br><span class="line"><span class="string"><span class="tag">       http://code.alibabatech.com/schema/dubbo</span></span></span><br><span class="line"><span class="string"><span class="tag">       http://code.alibabatech.com/schema/dubbo/dubbo.xsd&quot;</span>&gt;</span></span><br><span class="line">       </span><br><span class="line">   <span class="comment">&lt;!-- 配置可参考 http://dubbo.io/User+Guide-zh.htm --&gt;</span></span><br><span class="line">   <span class="comment">&lt;!-- 消费方应用名，用于计算依赖关系，不是匹配条件，不要与提供方一样 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">dubbo:application</span> <span class="attr">name</span>=<span class="string">&quot;spring-boot2-dubbo-consumer&quot;</span> <span class="attr">owner</span>=<span class="string">&quot;spring-boot2-dubbo-consumer&quot;</span> /&gt;</span></span><br><span class="line">   </span><br><span class="line">   <span class="comment">&lt;!-- 定义 zookeeper 注册中心地址及协议 --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">dubbo:registry</span> <span class="attr">protocol</span>=<span class="string">&quot;zookeeper&quot;</span> <span class="attr">address</span>=<span class="string">&quot;localhost:2181&quot;</span> <span class="attr">client</span>=<span class="string">&quot;zkclient&quot;</span> /&gt;</span></span><br><span class="line">   </span><br><span class="line">   <span class="comment">&lt;!-- 生成远程服务代理，可以和本地 bean 一样使用 demoService --&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">dubbo:reference</span> <span class="attr">id</span>=<span class="string">&quot;demoService&quot;</span> <span class="attr">interface</span>=<span class="string">&quot;com.md.demo.service.DemoService&quot;</span> /&gt;</span></span><br><span class="line">   </span><br><span class="line"><span class="tag">&lt;/<span class="name">beans</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="4-Dubbo-Admin"><a href="#4-Dubbo-Admin" class="headerlink" title="4. Dubbo-Admin"></a>4. Dubbo-Admin</h2><p>dubbo-admin 是 dubbo的控制台，具有服务查询、服务治理的功能。（感觉类似Eureka的功能界面）</p>
+<blockquote>
+<p>假如上面的服务提供者还在运行，这里会显示那个服务</p>
+</blockquote>
+<p><img src="https://hopestation.top/upload/2020/12/dz03-ce0506b64c624112bd2a2e2d91234c89.png" alt="dz03"></p>
+<h3 id="4-1-安装"><a href="#4-1-安装" class="headerlink" title="4.1 安装"></a>4.1 安装</h3><blockquote>
+<p>这里是配合我们单机的Zookeeper来，认识一下Dubbo-admin的界面</p>
+</blockquote>
+<h4 id="4-1-1-下载"><a href="#4-1-1-下载" class="headerlink" title="4.1.1 下载"></a>4.1.1 下载</h4><p>​	在GitHub上直接搜<code>dubbo admin</code>即可，是Apache的项目，一般第一个就是。然后下载，解压</p>
+<p><img src="https://hopestation.top/upload/2020/12/dz01-4db28b69a93b4d0c9f6c4da12d598254.png" alt="dz01"></p>
+<h4 id="4-1-2-修改配置"><a href="#4-1-2-修改配置" class="headerlink" title="4.1.2 修改配置"></a>4.1.2 修改配置</h4><p>用IDEA打开文件，先修改一些配置</p>
+<p><img src="https://hopestation.top/upload/2020/12/dz02-71995ad5a9a14025a4780e4e59792d79.png" alt="dz02"></p>
+<ol>
+<li>dubbo-admin-develop\dubbo-admin-server\src\main\resources\application.properties</li>
+</ol>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># centers in dubbo2.7</span></span><br><span class="line"><span class="comment">#-------- 确你的Zookeeper端口是否是2181（默认是的）---------</span></span><br><span class="line"><span class="string">admin.registry.address=zookeeper://127.0.0.1:2181</span></span><br><span class="line"><span class="string">admin.config-center=zookeeper://127.0.0.1:2181</span></span><br><span class="line"><span class="string">admin.metadata-report.address=zookeeper://127.0.0.1:2181</span></span><br><span class="line"><span class="comment"># Dubbo-Admin控制台的登录账号和密码</span></span><br><span class="line"><span class="string">admin.root.user.name=root</span></span><br><span class="line"><span class="string">admin.root.user.password=root</span></span><br><span class="line"><span class="string">...</span></span><br><span class="line"><span class="string">...</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#compress</span></span><br><span class="line"><span class="string">server.compression.enabled=true</span></span><br><span class="line"><span class="string">server.compression.mime-types=text/css,text/javascript,application/javascript</span></span><br><span class="line"><span class="string">server.compression.min-response-size=10240</span></span><br><span class="line"><span class="comment">#-------增加这句话，来设置dubbo-admin后台的端口是8051</span></span><br><span class="line"><span class="comment">#（默认是8080容易端口占用，设置一个没有被使用的端口即可）</span></span><br><span class="line"><span class="string">server.port=8051</span></span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>dubbo-admin-develop\dubbo-admin-ui\vue.config.js</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">const path = require(<span class="string">&#x27;path&#x27;</span>);</span><br><span class="line"></span><br><span class="line">module.exports = &#123;</span><br><span class="line">  outputDir: <span class="string">&quot;target/dist&quot;</span>,</span><br><span class="line">  lintOnSave: <span class="string">&quot;warning&quot;</span>,</span><br><span class="line">  devServer: &#123;</span><br><span class="line">    //-----这个端口应该是随便的，注意也不要使用被占用的端口就行----</span><br><span class="line">    port: 8050,  </span><br><span class="line">    historyApiFallback: &#123;</span><br><span class="line">      rewrites: [</span><br><span class="line">        &#123;from: /.*/, to: path.posix.join(<span class="string">&#x27;/&#x27;</span>, <span class="string">&#x27;index.html&#x27;</span>)&#125;,</span><br><span class="line">      ],</span><br><span class="line">    &#125;,</span><br><span class="line">    publicPath: <span class="string">&#x27;/&#x27;</span>,</span><br><span class="line">    proxy: &#123;</span><br><span class="line">      <span class="string">&#x27;/&#x27;</span>: &#123;</span><br><span class="line">        //-----代理目标：注意与application.properties的server.port保持一致----</span><br><span class="line">        target: <span class="string">&#x27;http://localhost:8051/&#x27;</span>,</span><br><span class="line">        changeOrigin: <span class="literal">true</span>,</span><br><span class="line">        pathRewrite: &#123;</span><br><span class="line">          <span class="string">&#x27;^/&#x27;</span>: <span class="string">&#x27;/&#x27;</span></span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-2-运行"><a href="#4-2-运行" class="headerlink" title="4.2 运行"></a>4.2 运行</h3><h4 id="4-2-1-启动Zookeeper"><a href="#4-2-1-启动Zookeeper" class="headerlink" title="4.2.1 启动Zookeeper"></a>4.2.1 启动Zookeeper</h4><p>在上面zookeeper的解压目录中的<code>bin</code>下运行：<strong>zkServer.cmd</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">E:\apache-zookeeper-3.6.2-bin\apache-zookeeper-3.6.2-bin\bin&gt;zkServer.cmd</span><br></pre></td></tr></table></figure>
+
+<h4 id="4-2-2-启动Dubbo-Admin"><a href="#4-2-2-启动Dubbo-Admin" class="headerlink" title="4.2.2 启动Dubbo-Admin"></a>4.2.2 启动Dubbo-Admin</h4><blockquote>
+<p>新版的是前后端分离架构的。所以前端后端需要分开来运行</p>
+</blockquote>
+<ol>
+<li><p>运行前端：在IDEA的命令行或者本地命令行输入 <code>npm run dev</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#注意是在 dubbo-admin-ui 目录下运行</span></span><br><span class="line">E:\dubbo-admin-develop (1)\dubbo-admin-develop\dubbo-admin-ui&gt;npm run dev</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>运行后端<br>dubbo-admin-develop\dubbo-admin-server\src\main\java\org\apache\dubbo\admin\DubboAdminApplication.java</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#错误结果：</span></span><br><span class="line"><span class="comment">#1.注意先启动Zookeeper，不然会报错 KeeperErrorCode = ConnectionLoss</span></span><br><span class="line">org.apache.curator.CuratorConnectionLossException: KeeperErrorCode = ConnectionLoss</span><br><span class="line"><span class="comment">#2.端口占用 主要端口占用问题</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#正常结果</span></span><br><span class="line">Tomcat started on port(s): 8051 (http) with context path <span class="string">&#x27;&#x27;</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>4.2.3 访问 <a target="_blank" rel="noopener" href="http://localhost:8050/">http://localhost:8050/</a></p>
+<p><img src="https://hopestation.top/upload/2020/12/dz04-7565ee18695040eb919edfd4b7450148.png" alt="dz04"></p>
+<h2 id="5-Dubbo-Monitor"><a href="#5-Dubbo-Monitor" class="headerlink" title="5. Dubbo-Monitor"></a>5. Dubbo-Monitor</h2><blockquote>
+<p>参考自：<a target="_blank" rel="noopener" href="https://blog.csdn.net/yz357823669/article/details/80505642">https://blog.csdn.net/yz357823669/article/details/80505642</a></p>
+</blockquote>
+<p>Dubbo-Monitor 主要用来统计服务的调用次数和调用时间，服务消费者和提供者，在内存中累计调用次数和调用时间，定时每分钟发送一次统计数据到监控中心，监控中心则使用数据绘制图表来显示。<br>服务消费方和提供方需要显示开启 Monitor。<br>如果使用 Spring 配置的服务消费方和提供方，则需要在对应 XML 添加下面配置：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dubbo:monitor</span> <span class="attr">protocol</span>=<span class="string">&quot;registry&quot;</span>/&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>其中 protocol 为“registry”，表示服务提供方和消费方从服务注册中心发现监控中心（Monitor）地址。<br>如果使用的 Dubbo API 方式需要首先创建一个 MonitorConfig 对象。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">MonitorConfig monitorConfig = new MonitorConfig();</span><br><span class="line">monitorConfig.setProtocol(&quot;registry&quot;);</span><br></pre></td></tr></table></figure>
+
+<p>然后调用 <code>reference.setMonitor(monitorConfig);</code> 设置到消费配置对象里面。<br>同样我们下载dubbo源码之后解压打包，这里提供下载<a target="_blank" rel="noopener" href="https://download.csdn.net/download/yz357823669/10436895">点我下载</a><br>解压 dubbo-monitor-simple-2.5.10-assembly.tar.gz，进入 dubbo-monitor-simple-2.5.10&#x2F;conf&#x2F; 目录修改 <code>dubbo.properties</code></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">dubbo.container</span>=<span class="string">log4j,spring,registry,jetty</span></span><br><span class="line"><span class="attr">dubbo.application.name</span>=<span class="string">simple-monitor</span></span><br><span class="line"><span class="attr">dubbo.application.owner</span>=<span class="string"></span></span><br><span class="line"><span class="comment">#dubbo.registry.address=multicast://224.5.6.7:1234</span></span><br><span class="line"><span class="attr">dubbo.registry.address</span>=<span class="string">zookeeper://127.0.0.1:2181</span></span><br><span class="line"><span class="comment">#dubbo.registry.address=redis://127.0.0.1:6379</span></span><br><span class="line"><span class="comment">#dubbo.registry.address=dubbo://127.0.0.1:9090</span></span><br><span class="line"><span class="attr">dubbo.protocol.port</span>=<span class="string">7070</span></span><br><span class="line"><span class="attr">dubbo.jetty.port</span>=<span class="string">8081</span></span><br><span class="line"><span class="attr">dubbo.jetty.directory</span>=<span class="string">$&#123;user.home&#125;/monitor</span></span><br><span class="line"><span class="attr">dubbo.charts.directory</span>=<span class="string">$&#123;dubbo.jetty.directory&#125;/charts</span></span><br><span class="line"><span class="attr">dubbo.statistics.directory</span>=<span class="string">$&#123;user.home&#125;/monitor/statistics</span></span><br><span class="line"><span class="attr">dubbo.log4j.file</span>=<span class="string">logs/dubbo-monitor-simple.log</span></span><br><span class="line"><span class="attr">dubbo.log4j.level</span>=<span class="string">WARN</span></span><br></pre></td></tr></table></figure>
+
+<p>其中 dubbo.registry.address&#x3D;zookeeper:&#x2F;&#x2F;127.0.0.1:2181 设置注册中心地址，这里设置为 ZooKeeper 的地址。<br>dubbo.protocol.port&#x3D;7070，是 Monitor 提供的远程服务监听端口，服务提供者和消费者会调用这个端口提供的服务，发送统计信息到 Monitor。<br>dubbo.charts.directory 和 dubbo.statistics.directory 为 Monitor 本地存放的监控数据文件的位置。<br>dubbo.jetty.port&#x3D;8081，设置 Jetty 容器的监听地址，类似于 Tomcat 的8080端口，这里设置为8081。<br>然后进入 dubbo-monitor-simple-2.5.10&#x2F;bin，执行 <code>start.bat</code> 启动 Monitor：<br><img src="https://img-blog.csdn.net/20180530113841395?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3l6MzU3ODIzNjY5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70" alt="这里写图片描述"><br>至此 Monitor 启动了，访问 <a target="_blank" rel="noopener" href="http://127.0.0.1:8081/">http://127.0.0.1:8081/</a> 会出现下面界面：<br><img src="https://img-blog.csdn.net/20180530113918121?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3l6MzU3ODIzNjY5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70" alt="这里写图片描述"></p>
+<p>然后我们就可以使用监控平台做一些事情了。比如服务查看,应用程序查看,调用情况统计<br><strong>注</strong>： Dubbo-Monitor 也不是使用 Dubbo 搭建分布式系统必须的组件，但是它用来统计服务的调用次调和调用时间的监控中心，这些数据有助于系统运维和调优。</p>
+<h2 id="6-常用配置"><a href="#6-常用配置" class="headerlink" title="6. 常用配置"></a>6. 常用配置</h2><blockquote>
+<p>参考自：<a target="_blank" rel="noopener" href="https://blog.csdn.net/yz357823669/article/details/83591507">https://blog.csdn.net/yz357823669/article/details/83591507</a></p>
+</blockquote>
+<p>之前我们简单介绍了dubbo配置服务提供者、消费者以及管理平台监控平台，接下来我们再说一下dubbo的其他配置。</p>
+<h3 id="6-1-配置策略"><a href="#6-1-配置策略" class="headerlink" title="6.1 配置策略"></a>6.1 配置策略</h3><h4 id="6-1-1-属性配置"><a href="#6-1-1-属性配置" class="headerlink" title="6.1.1 属性配置"></a>6.1.1 属性配置</h4><p>dubbo可以在<strong>JVM 启动参数</strong>、<strong>dubboXML</strong>、<strong>dubbo.properties</strong> 三个地方配置相关属性,这里我们以端口为例.</p>
+<ul>
+<li>JVM 启动参数<br>我们可以在启动项目时配置VM参数<br><img src="https://img-blog.csdnimg.cn/20181101085628615.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3l6MzU3ODIzNjY5,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
+</ul>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">-Ddubbo.protocol.port</span>=<span class="string">20883</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>dubboXML</li>
+</ul>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dubbo:protocol</span> <span class="attr">name</span>=<span class="string">&quot;dubbo&quot;</span> <span class="attr">port</span>=<span class="string">&quot;20882&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">dubbo:protocol</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>dubbo.properties</li>
+</ul>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">dubbo.protocol.port</span>=<span class="string">20881</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>覆盖策略</strong><br><img src="https://img-blog.csdnimg.cn/20181031220111268.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3l6MzU3ODIzNjY5,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<p>JVM 启动 -D 参数优先，这样可以使用户在部署和启动时进行参数重写，比如在启动时需改变协议的端口。</p>
+<p>XML 次之，如果在 XML 中有配置，则 dubbo.properties 中的相应配置项无效。</p>
+<p>Properties 最后，相当于缺省值，只有 XML 没有配置时，dubbo.properties 的相应配置项才会生效，通常用于共享公共配置，比如应用名。</p>
+<h4 id="6-1-2-XML配置"><a href="#6-1-2-XML配置" class="headerlink" title="6.1.2 XML配置"></a>6.1.2 XML配置</h4><p>前面介绍了服务提供者接口的配置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;dubbo:service interface=&quot;com.yz.dubbo.api.IUserService&quot; ref=&quot;userService1&quot; timeout=&quot;1000&quot;&gt;&lt;/dubbo:service&gt;</span><br></pre></td></tr></table></figure>
+
+<p>当然我们只是把<code>timeout</code> 属性配置在了接口上,而接口中有那么多方法,所以我们还可以具体配置到方法</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;dubbo:service interface=&quot;com.yz.dubbo.api.IUserService&quot; ref=&quot;userService1&quot; &gt;</span><br><span class="line">	&lt;dubbo:method name=&quot;getUser&quot; timeout=&quot;2000&quot;&gt;&lt;/dubbo:method&gt;</span><br><span class="line">&lt;/dubbo:service&gt;</span><br><span class="line">123</span><br></pre></td></tr></table></figure>
+
+<p>这样我们就指定了<code>getUser</code> 方法<code>timeout</code> 属性</p>
+<p>但是服务提供者和消费者有那么多的接口一个一个配置岂不是太麻烦,所以我们可以将一样的配置抽取出来作为服务提供者以及消费者的缺省配置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;dubbo:provider timeout=&quot;3000&quot;&gt;&lt;/dubbo:provider&gt;</span><br></pre></td></tr></table></figure>
+
+<p>以 timeout 为例，显示了配置的查找顺序，其它 retries, loadbalance, actives 等类似</p>
+<ul>
+<li>方法级优先，接口级次之，全局配置再次之。</li>
+<li>如果级别一样，则消费方优先，提供方次之。</li>
+</ul>
+<p><img src="https://img-blog.csdnimg.cn/20181031220932882.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3l6MzU3ODIzNjY5,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>其中，服务提供方配置，通过 URL 经由注册中心传递给消费方。<br>建议由服务提供方设置超时，因为一个方法需要执行多长时间，服务提供方更清楚，如果一个消费方同时引用多个服务，就不需要关心每个服务的超时设置。</p>
+<h3 id="6-2-启动检查"><a href="#6-2-启动检查" class="headerlink" title="6.2.启动检查"></a>6.2.启动检查</h3><p>Dubbo 缺省会在启动时检查依赖的服务是否可用，不可用时会抛出异常，阻止 Spring 初始化完成，以便上线时，能及早发现问题，默认 check&#x3D;“true”。</p>
+<p>可以通过 check&#x3D;“false” 关闭检查，比如，测试时，有些服务不关心，或者出现了循环依赖，必须有一方先启动。<br><strong>例子</strong><br>当我们没有配置检查属性的时候.只启动消费者,可以看到控制台输出错误信息 <strong>No provider</strong></p>
+<p><img src="https://img-blog.csdnimg.cn/20181101090823935.png" alt="在这里插入图片描述"></p>
+<p>我们配置启动检查<code>check</code>为<code>false</code></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dubbo:reference</span> <span class="attr">id</span>=<span class="string">&quot;userService&quot;</span> <span class="attr">interface</span>=<span class="string">&quot;com.yz.dubbo.api.IUserService&quot;</span> <span class="attr">check</span>=<span class="string">&quot;false&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">dubbo:reference</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>当我们设置<code>check=&quot;false&quot;</code> 时,在没有提供者的情况下,消费者启动是不会报错的</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ClassPathXmlApplicationContext</span> <span class="variable">context</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ClassPathXmlApplicationContext</span>(</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">String</span>[] &#123; <span class="string">&quot;classpath:customer.xml&quot;</span> &#125;);</span><br><span class="line"><span class="keyword">final</span> <span class="type">IUserService</span> <span class="variable">demoService</span> <span class="operator">=</span> (IUserService) context.getBean(<span class="string">&quot;userService&quot;</span>);</span><br><span class="line"><span class="comment">//        System.out.println(demoService.getUser());</span></span><br><span class="line">System.out.println(<span class="string">&quot;程序运行......&quot;</span>);</span><br><span class="line">System.in.read();</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://img-blog.csdnimg.cn/20181101091728232.png" alt="在这里插入图片描述"><br>,只有在显示调用提供者服务的时候才会报错</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ClassPathXmlApplicationContext</span> <span class="variable">context</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ClassPathXmlApplicationContext</span>(</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">String</span>[] &#123; <span class="string">&quot;classpath:customer.xml&quot;</span> &#125;);</span><br><span class="line"><span class="keyword">final</span> <span class="type">IUserService</span> <span class="variable">demoService</span> <span class="operator">=</span> (IUserService) context.getBean(<span class="string">&quot;userService&quot;</span>);</span><br><span class="line">System.out.println(demoService.getUser());</span><br><span class="line">System.out.println(<span class="string">&quot;程序运行......&quot;</span>);</span><br><span class="line">System.in.read();</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://img-blog.csdnimg.cn/20181101091825618.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3l6MzU3ODIzNjY5,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<p>可以看到程序报错,就是显示调用 <code>demoService.getUser()</code>这段代码导致的<br><strong>注册中心检查</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">dubbo.registry.check</span>=<span class="string">false</span></span><br></pre></td></tr></table></figure>
+
+<p>我们可以通过以上配置关闭服务提供者消费者对注册中心的检查,这样注册中心挂掉了,我们服务提供者消费者启动也不会报错,只是不能注册服务而已…</p>
+<p><strong>例子</strong><br>当我们的注册中心挂掉的时候,我们启动服务消费者以及提供者是会报错的<br><img src="https://img-blog.csdnimg.cn/20181101093739391.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3l6MzU3ODIzNjY5,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br><img src="https://img-blog.csdnimg.cn/20181101093747325.png" alt="在这里插入图片描述"></p>
+<p>我们只需要配置注册中心不检查,启动就不会报错而且当注册中心重新恢复的时候他们会自动的订阅服务以及注册服务</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dubbo:registry</span> <span class="attr">address</span>=<span class="string">&quot;zookeeper://127.0.0.1:2181&quot;</span> <span class="attr">check</span>=<span class="string">&quot;false&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">dubbo:registry</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="6-3-超时时间"><a href="#6-3-超时时间" class="headerlink" title="6.3 超时时间"></a>6.3 超时时间</h3><p>由于网络或服务端不可靠，会导致调用出现一种不确定的中间状态（超时）。为了避免超时导致客户端资源（线程）挂起耗尽，必须设置超时时间。<br>在现实的开发中我们往往一些服务提供者的调用比较耗时,而dubbo的<code>timeout</code>缺省配置为<code>1000</code> 毫秒,也就是说当消费者调用服务提供者一秒钟还没有返回结果,则消费者会报错,如下</p>
+<p><strong>提供者</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserServiceImpl</span> <span class="keyword">implements</span> <span class="title class_">IUserService</span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> List&lt;User&gt; <span class="title function_">getUser</span><span class="params">()</span> <span class="keyword">throws</span> UserException &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Thread.sleep(<span class="number">3000</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> Arrays.asList(<span class="keyword">new</span> <span class="title class_">User</span>[]&#123;<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">1</span>,<span class="string">&quot;yz&quot;</span>,<span class="string">&quot;china&quot;</span>,<span class="string">&quot;hlj&quot;</span>)</span><br><span class="line">                ,<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">2</span>,<span class="string">&quot;zwl&quot;</span>,<span class="string">&quot;china&quot;</span>,<span class="string">&quot;ah&quot;</span>)</span><br><span class="line">                ,<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">3</span>,<span class="string">&quot;hhj&quot;</span>,<span class="string">&quot;china&quot;</span>,<span class="string">&quot;zj&quot;</span>)&#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们模拟耗时,让提供者睡眠三秒钟,接下来启动提供者消费者<br><img src="https://img-blog.csdnimg.cn/20181101094942970.png" alt="在这里插入图片描述"></p>
+<p>可以看到消费者在等待一秒后还没有结果就报错,所以在线上我们可以通过设置timeout来避免提供者服务耗时带来的问题</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dubbo:service</span> <span class="attr">interface</span>=<span class="string">&quot;com.yz.dubbo.api.IUserService&quot;</span> <span class="attr">ref</span>=<span class="string">&quot;userService1&quot;</span> <span class="attr">timeout</span>=<span class="string">&quot;4000&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">dubbo:service</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://img-blog.csdnimg.cn/20181101095101931.png" alt="在这里插入图片描述"></p>
+<p>消费者在等待三秒后,提供者服务已经被正常调用</p>
+<h3 id="6-4-重试次数"><a href="#6-4-重试次数" class="headerlink" title="6.4 重试次数"></a>6.4 重试次数</h3><p>当我们服务消费者消费出现失败，可通过 <code>retries=&quot;2&quot;</code> 来设置重试次数(不含第一次)，多次调用服务提供者<br><strong>例子</strong><br>首先我们去掉之前的<code>timeout</code> 属性来模拟出错,并加上<code>retries</code> 来实现重试</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dubbo:reference</span> <span class="attr">id</span>=<span class="string">&quot;userService&quot;</span> <span class="attr">interface</span>=<span class="string">&quot;com.yz.dubbo.api.IUserService&quot;</span> <span class="attr">check</span>=<span class="string">&quot;false&quot;</span> <span class="attr">retries</span>=<span class="string">&quot;3&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">dubbo:reference</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>提供者</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">        Thread.sleep(<span class="number">3000</span>);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    System.out.println(<span class="string">&quot;被调用了............&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> Arrays.asList(<span class="keyword">new</span> <span class="title class_">User</span>[]&#123;<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">1</span>,<span class="string">&quot;yz&quot;</span>,<span class="string">&quot;china&quot;</span>,<span class="string">&quot;hlj&quot;</span>)</span><br><span class="line">            ,<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">2</span>,<span class="string">&quot;zwl&quot;</span>,<span class="string">&quot;china&quot;</span>,<span class="string">&quot;ah&quot;</span>)</span><br><span class="line">            ,<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">3</span>,<span class="string">&quot;hhj&quot;</span>,<span class="string">&quot;china&quot;</span>,<span class="string">&quot;zj&quot;</span>)&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>接下来我们分别启动服务提供者与消费者,可以看到,我们消费者在调用失败后提供者被调用了四次<br><img src="https://img-blog.csdnimg.cn/20181101100946890.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3l6MzU3ODIzNjY5,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br><img src="https://img-blog.csdnimg.cn/20181101100954964.png" alt="在这里插入图片描述"></p>
+<h3 id="6-5-多版本"><a href="#6-5-多版本" class="headerlink" title="6.5 多版本"></a>6.5 多版本</h3><p>当一个接口实现，出现不兼容升级时，可以用版本号过渡，版本号不同的服务相互间不引用。</p>
+<p>可以按照以下的步骤进行版本迁移：</p>
+<ol>
+<li>在低压力时间段，先升级一半提供者为新版本</li>
+<li>再将所有消费者升级为新版本</li>
+<li>然后将剩下的一半提供者升级为新版本</li>
+</ol>
+<p>也就实现了dubbo所说的灰度发布</p>
+<p><strong>例子</strong><br>首先我们创建提供者接口两个不同实现</p>
+<p>UserServiceImpl</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> List&lt;User&gt; <span class="title function_">getUser</span><span class="params">()</span> <span class="keyword">throws</span> UserException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;被调用了1............&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> Arrays.asList(<span class="keyword">new</span> <span class="title class_">User</span>[]&#123;<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">1</span>,<span class="string">&quot;yz&quot;</span>,<span class="string">&quot;china&quot;</span>,<span class="string">&quot;hlj&quot;</span>)</span><br><span class="line">                ,<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">2</span>,<span class="string">&quot;zwl&quot;</span>,<span class="string">&quot;china&quot;</span>,<span class="string">&quot;ah&quot;</span>)</span><br><span class="line">                ,<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">3</span>,<span class="string">&quot;hhj&quot;</span>,<span class="string">&quot;china&quot;</span>,<span class="string">&quot;zj&quot;</span>)&#125;);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="number">12345678</span></span><br></pre></td></tr></table></figure>
+
+<p>UserServiceImpl2</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> List&lt;User&gt; <span class="title function_">getUser</span><span class="params">()</span> <span class="keyword">throws</span> UserException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;被调用了2............&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> Arrays.asList(<span class="keyword">new</span> <span class="title class_">User</span>[]&#123;<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">1</span>,<span class="string">&quot;yz&quot;</span>,<span class="string">&quot;china&quot;</span>,<span class="string">&quot;hlj&quot;</span>)</span><br><span class="line">                ,<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">2</span>,<span class="string">&quot;zwl&quot;</span>,<span class="string">&quot;china&quot;</span>,<span class="string">&quot;ah&quot;</span>)</span><br><span class="line">                ,<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">3</span>,<span class="string">&quot;hhj&quot;</span>,<span class="string">&quot;china&quot;</span>,<span class="string">&quot;zj&quot;</span>)&#125;);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="number">12345678</span></span><br></pre></td></tr></table></figure>
+
+<p>接下来在<code>provider.xml</code>配置文件中提供者接口实现指向不同的两个类,并指定不同的版本</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;userService1&quot;</span> <span class="attr">class</span>=<span class="string">&quot;com.yz.dubbo.impl.UserServiceImpl&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;userService2&quot;</span> <span class="attr">class</span>=<span class="string">&quot;com.yz.dubbo.impl.UserServiceImpl2&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">dubbo:service</span> <span class="attr">interface</span>=<span class="string">&quot;com.yz.dubbo.api.IUserService&quot;</span> <span class="attr">ref</span>=<span class="string">&quot;userService1&quot;</span> <span class="attr">version</span>=<span class="string">&quot;1.0.0&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">dubbo:service</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">dubbo:service</span> <span class="attr">interface</span>=<span class="string">&quot;com.yz.dubbo.api.IUserService&quot;</span> <span class="attr">ref</span>=<span class="string">&quot;userService2&quot;</span> <span class="attr">version</span>=<span class="string">&quot;2.0.0&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">dubbo:service</span>&gt;</span></span><br><span class="line">1234567</span><br></pre></td></tr></table></figure>
+
+<p>在<code>customer.xml</code> 中指定消费者的版本号为<code>1.0.0</code></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dubbo:reference</span> <span class="attr">id</span>=<span class="string">&quot;userService&quot;</span> <span class="attr">interface</span>=<span class="string">&quot;com.yz.dubbo.api.IUserService&quot;</span> <span class="attr">check</span>=<span class="string">&quot;false&quot;</span> <span class="attr">version</span>=<span class="string">&quot;1.0.0&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">dubbo:reference</span>&gt;</span></span><br><span class="line">1</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://img-blog.csdnimg.cn/20181101102642292.png" alt="在这里插入图片描述"></p>
+<p>在<code>customer.xml</code> 中指定消费者的版本号为<code>2.0.0</code></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dubbo:reference</span> <span class="attr">id</span>=<span class="string">&quot;userService&quot;</span> <span class="attr">interface</span>=<span class="string">&quot;com.yz.dubbo.api.IUserService&quot;</span> <span class="attr">check</span>=<span class="string">&quot;false&quot;</span> <span class="attr">version</span>=<span class="string">&quot;2.0.0&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">dubbo:reference</span>&gt;</span></span><br><span class="line">1</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://img-blog.csdnimg.cn/20181101102649226.png" alt="在这里插入图片描述"></p>
+<p>可以看到了通过指定版本号分别调用了不同的接口实现,这样在实际开发中就能够实现新旧功能的过度</p>
+<h2 id="7-高可用"><a href="#7-高可用" class="headerlink" title="7. 高可用"></a>7. 高可用</h2><p>之前我们说了dubbo超时重试启动检查等配置,接下来我们说一下dubbo高可用的一些配置</p>
+<h3 id="7-1-zookeeper宕机"><a href="#7-1-zookeeper宕机" class="headerlink" title="7.1 zookeeper宕机"></a>7.1 zookeeper宕机</h3><p>我们接下来讨论一下如果zookeeper宕机对我们的服务提供者消费者有什么影响</p>
+<p><strong>现象</strong>：zookeeper注册中心宕机，<strong>还可以消费dubbo暴露的服务</strong>。</p>
+<p><strong>原因</strong>：</p>
+<ul>
+<li>监控中心宕掉不影响使用，只是丢失部分采样数据</li>
+<li>数据库宕掉后，注册中心仍能通过缓存提供服务列表查询，但不能注册新服务</li>
+<li>注册中心对等集群，任意一台宕掉后，将自动切换到另一台</li>
+<li><strong>注册中心全部宕掉后，服务提供者和服务消费者仍能通过本地缓存通讯</strong></li>
+<li>服务提供者无状态，任意一台宕掉后，不影响使用</li>
+<li>服务提供者全部宕掉后，服务消费者应用将无法使用，并无限次重连等待服务提供者恢复</li>
+</ul>
+<p><strong>高可用：通过设计，减少系统不能提供服务的时间</strong></p>
+<p><strong>例子：</strong></p>
+<p>我们在消费者中睡眠20秒,然后我们在这20秒时间内停掉注册中心,看看第二次消费能否成功</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">App</span> </span><br><span class="line">    &#123;</span><br><span class="line">    </span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">( String[] args )</span> <span class="keyword">throws</span> Exception</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="type">ClassPathXmlApplicationContext</span> <span class="variable">context</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ClassPathXmlApplicationContext</span>(</span><br><span class="line">                    <span class="keyword">new</span> <span class="title class_">String</span>[] &#123; <span class="string">&quot;classpath:customer.xml&quot;</span> &#125;);</span><br><span class="line">            <span class="keyword">final</span> <span class="type">IUserService</span> <span class="variable">demoService</span> <span class="operator">=</span> (IUserService) context.getBean(<span class="string">&quot;userService&quot;</span>);</span><br><span class="line">            System.out.println(demoService.getUser());</span><br><span class="line">            System.out.println(<span class="string">&quot;程序运行第一次......&quot;</span>);</span><br><span class="line">            Thread.sleep(<span class="number">1000</span>*<span class="number">20</span>);</span><br><span class="line">            System.out.println(demoService.getUser());</span><br><span class="line">            System.out.println(<span class="string">&quot;程序运行第二次......&quot;</span>);</span><br><span class="line">            System.in.read();</span><br><span class="line">    </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="number">1234567891011121314151617</span></span><br></pre></td></tr></table></figure>
+
+<p>接下来我们一次启动服务提供者 消费者 然后停掉服务注册中心</p>
+<p><img src="https://img-blog.csdnimg.cn/20181101181257530.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3l6MzU3ODIzNjY5,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<p>可以看到</p>
+<p><img src="https://img-blog.csdnimg.cn/20181101181310922.png" alt="在这里插入图片描述"><br><img src="https://img-blog.csdnimg.cn/20181101181317918.png" alt="在这里插入图片描述"></p>
+<p>我们的服务消费者在注册中心宕机后让然可以调用服务提供者提供的服务。但是注册中心宕机后我们不能再注册新的服务。</p>
+<h3 id="7-2-Dubbo直连"><a href="#7-2-Dubbo直连" class="headerlink" title="7.2 Dubbo直连"></a>7.2 Dubbo直连</h3><p>在开发及测试环境下，经常需要绕过注册中心，只测试指定服务提供者，这时候可能需要点对点直连，点对点直连方式，将以服务接口为单位，忽略注册中心的提供者列表，A 接口配置点对点，不影响 B 接口从注册中心获取列表。</p>
+<p><strong>注意</strong> 为了避免复杂化线上环境，不要在线上使用这个功能，只应在测试阶段使用。我们可以在开发的时候使用此方式进行调试</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dubbo:reference</span> <span class="attr">id</span>=<span class="string">&quot;userService&quot;</span> <span class="attr">interface</span>=<span class="string">&quot;com.yz.dubbo.api.IUserService&quot;</span> <span class="attr">check</span>=<span class="string">&quot;false&quot;</span> <span class="attr">version</span>=<span class="string">&quot;1.0.0&quot;</span> <span class="attr">url</span>=<span class="string">&quot;dubbo://127.0.0.1:20882&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">dubbo:reference</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>基于注解方式可以在 <code>@Reference(url = ..)</code>里来配置</p>
+</blockquote>
+<p>我们启动我们的服务注册中心与服务提供者消费</p>
+<p>发现我们的消费者并没有注册到服务注册中心,但是我们仍然可以调用服务提供者提供的服务</p>
+<p><img src="https://img-blog.csdnimg.cn/20181101181333550.png" alt="在这里插入图片描述"></p>
+<p>我们实现了跨注册中心 直连服务提供者</p>
+<h3 id="7-3-负载均衡"><a href="#7-3-负载均衡" class="headerlink" title="7.3 负载均衡"></a>7.3 负载均衡</h3><p>在集群负载均衡时，Dubbo 提供了多种均衡策略，<strong>默认为 Random 随机调用</strong>。</p>
+<p><strong>负载均衡策略</strong></p>
+<ul>
+<li><p><strong>Random LoadBalance</strong></p>
+<p>随机，按权重设置随机概率。</p>
+</li>
+<li><p><strong>RoundRobin LoadBalance</strong></p>
+<p>轮询，按公约后的权重设置轮询比率。</p>
+</li>
+<li><p><strong>LeastActive LoadBalance</strong></p>
+<p>最少活跃调用数，相同活跃数的随机，活跃数指调用前后计数差。</p>
+</li>
+<li><p><strong>ConsistentHash LoadBalance</strong></p>
+<p>一致性 Hash，相同参数的请求总是发到同一提供者。</p>
+</li>
+</ul>
+<p>接下来我们测试一下默认的随机方式</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">消费者的xml</span><br><span class="line"><span class="tag">&lt;<span class="name">dubbo:service</span> <span class="attr">interface</span>=<span class="string">&quot;com.yz.dubbo.api.IUserService&quot;</span> <span class="attr">ref</span>=<span class="string">&quot;userService1&quot;</span> <span class="attr">version</span>=<span class="string">&quot;1.0.0&quot;</span> <span class="attr">loadbalance</span>=<span class="string">&quot;random&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">dubbo:service</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>基于注解方式可以在 <code>@Reference()</code>里的参数来配置</p>
+</blockquote>
+<p>我们启动多个服务提供者,并指定不同的端口号,在实现中通过来区分不同的提供者</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">System.out.println(&quot;被调用了1............&quot;);</span><br><span class="line">System.out.println(&quot;被调用了2............&quot;);</span><br></pre></td></tr></table></figure>
+
+<p>接下来我们启动多个服务提供者来模拟,并通过Admin控制台中的 倍权 半权 来调节权重 ,结果如下</p>
+<p><img src="https://img-blog.csdnimg.cn/20181101181342991.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3l6MzU3ODIzNjY5,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<p>接下来我们启动服务消费者模拟消费者多次消费</p>
+<p>我们模拟了六次可以看到控制台输出</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">被调用了0............</span><br><span class="line">被调用了0............</span><br><span class="line">被调用了1............</span><br><span class="line">被调用了0............</span><br><span class="line">被调用了0............</span><br><span class="line">被调用了0............</span><br></pre></td></tr></table></figure>
+
+<p>实现了调用多个服务提供者,并实现了负载均衡</p>
+<h3 id="7-4-服务降级"><a href="#7-4-服务降级" class="headerlink" title="7.4 服务降级"></a>7.4 服务降级</h3><p>当我服务器的压力比较大的时候,我们可以通过服务降级功能 临时屏蔽某个出错的非关键服务，并定义降级后的返回策略,屏蔽掉不重要的服务如广告服务等,来降低核心业务的压力</p>
+<ul>
+<li><code>mock=force:return+null</code> 表示消费方对该服务的方法调用都直接返回 null 值，不发起远程调用。用来屏蔽不重要服务不可用时对调用方的影响。</li>
+<li>还可以改为 <code>mock=fail:return+null</code> 表示消费方对该服务的方法调用在失败后，再返回 null 值，不抛异常。用来容忍不重要服务不稳定时对调用方的影响。</li>
+</ul>
+<p>我们可以直接在Admin控制台来操作服务降级和容错</p>
+<blockquote>
+<p>在Dubbo-Admin中</p>
+<p><strong>降级</strong>：对应服务消费者中的<strong>屏蔽</strong>功能，相当于<strong>不发起远程调用</strong></p>
+<p><strong>容错</strong>：对应服务消费者中的<strong>容错</strong>功能，正常调用服务提供者，但在提供者报错等<strong>调用失败时，返回null值</strong></p>
+</blockquote>
+<p><strong>屏蔽</strong></p>
+<p>我们屏蔽我们的应用yzcustomer</p>
+<p><img src="https://img-blog.csdnimg.cn/2018110118135232.png" alt="在这里插入图片描述"></p>
+<p>发现提供者并没有调用且返回null<br><img src="https://img-blog.csdnimg.cn/20181101181358912.png" alt="在这里插入图片描述"></p>
+<p><strong>容错</strong></p>
+<p>我们容错我们的应用yzcustomer,并手动使我们的提供者出错,启动服务提供者和消费者</p>
+<p><img src="https://img-blog.csdnimg.cn/20181101181405109.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3l6MzU3ODIzNjY5,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<p>发现在调用服务提供者出错时,返回null</p>
+<p><img src="https://img-blog.csdnimg.cn/2018110118141162.png" alt="在这里插入图片描述"></p>
+<h3 id="7-5-集群容错"><a href="#7-5-集群容错" class="headerlink" title="7.5 集群容错"></a>7.5 集群容错</h3><h4 id="7-5-1-Dubbo容错方案"><a href="#7-5-1-Dubbo容错方案" class="headerlink" title="7.5.1 Dubbo容错方案"></a>7.5.1 Dubbo容错方案</h4><p>在集群调用失败时，Dubbo 提供了多种容错方案，<strong>默认为 Failover 重试</strong></p>
+<p><strong>Failover Cluster</strong></p>
+<p>失败自动切换，当出现失败，重试其它服务器 。通常用于读操作，但重试会带来更长延迟。可通过 <code>retries=&quot;2&quot;</code> 来设置重试次数(不含第一次)。</p>
+<p><strong>Failfast Cluster</strong></p>
+<p>快速失败，只发起一次调用，失败立即报错。通常用于非幂等性的写操作，比如新增记录。</p>
+<p><strong>Failsafe Cluster</strong></p>
+<p>失败安全，出现异常时，直接忽略。通常用于写入审计日志等操作。</p>
+<p><strong>Failback Cluster</strong></p>
+<p>失败自动恢复，后台记录失败请求，定时重发。通常用于消息通知操作。</p>
+<p><strong>Forking Cluster</strong></p>
+<p>并行调用多个服务器，只要一个成功即返回。通常用于实时性要求较高的读操作，但需要浪费更多服务资源。可通过 <code>forks=&quot;2&quot;</code> 来设置最大并行数。</p>
+<p><strong>Broadcast Cluster</strong></p>
+<p>广播调用所有提供者，逐个调用，任意一台报错则报错 。通常用于通知所有提供者更新缓存或日志等本地资源信息。</p>
+<p><strong>集群模式配置</strong></p>
+<p>按照以下示例在服务提供方和消费方配置集群模式</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dubbo:service</span> <span class="attr">cluster</span>=<span class="string">&quot;failsafe&quot;</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>或</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dubbo:reference</span> <span class="attr">cluster</span>=<span class="string">&quot;failsafe&quot;</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h4 id="7-5-2-整合Hystrix实现容错"><a href="#7-5-2-整合Hystrix实现容错" class="headerlink" title="7.5.2 整合Hystrix实现容错"></a>7.5.2 整合Hystrix实现容错</h4><p>简介：Hystrix旨在通过控制那些访问远程系统、服务和第三方库的节点从而对延迟和故障提供更强大的容错能力，Hystrix具备拥有回退机制和断路器功能的线程和信号隔离、请求缓存和请求打包以及监控和配置等功能。</p>
+<p>1）、在pom文件中导入依赖（服务提供者和服务消费者都需要导入）</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">1         <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">2             <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">3             <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-hystrix<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">4             <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.4.4.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">5         <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>2）、在主程序启动类上添加@EnableHystrix注解开启服务容错（服务提供者和服务消费者都需要添加）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"> <span class="number">1</span> <span class="keyword">package</span> cn.coreqi;</span><br><span class="line"> <span class="number">2</span> </span><br><span class="line"> <span class="number">3</span> <span class="keyword">import</span> com.alibaba.dubbo.config.spring.context.annotation.EnableDubbo;</span><br><span class="line"> <span class="number">4</span> <span class="keyword">import</span> org.springframework.boot.SpringApplication;</span><br><span class="line"> <span class="number">5</span> <span class="keyword">import</span> org.springframework.boot.autoconfigure.SpringBootApplication;</span><br><span class="line"> <span class="number">6</span> <span class="keyword">import</span> org.springframework.cloud.netflix.hystrix.EnableHystrix;</span><br><span class="line"> <span class="number">7</span> </span><br><span class="line"> <span class="number">8</span> <span class="meta">@SpringBootApplication</span></span><br><span class="line"> <span class="number">9</span> <span class="meta">@EnableDubbo</span></span><br><span class="line"><span class="number">10</span> <span class="meta">@EnableHystrix</span>  <span class="comment">//开启服务容错</span></span><br><span class="line"><span class="number">11</span> <span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SpringbootdubboserviceproviderApplication</span> &#123;</span><br><span class="line"><span class="number">12</span> </span><br><span class="line"><span class="number">13</span>     <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line"><span class="number">14</span>         SpringApplication.run(SpringbootdubboserviceproviderApplication.class, args);</span><br><span class="line"><span class="number">15</span>     &#125;</span><br><span class="line"><span class="number">16</span> </span><br><span class="line"><span class="number">17</span> &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>3）、在服务提供者实现类中方法上添加@HystrixCommand注解</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"> <span class="number">1</span> <span class="keyword">package</span> cn.coreqi.service.impl;</span><br><span class="line"> <span class="number">2</span> </span><br><span class="line"> <span class="number">3</span> <span class="keyword">import</span> cn.coreqi.entities.User;</span><br><span class="line"> <span class="number">4</span> <span class="keyword">import</span> cn.coreqi.service.UserService;</span><br><span class="line"> <span class="number">5</span> <span class="keyword">import</span> com.alibaba.dubbo.config.annotation.Service;</span><br><span class="line"> <span class="number">6</span> <span class="keyword">import</span> com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;</span><br><span class="line"> <span class="number">7</span> <span class="keyword">import</span> org.springframework.stereotype.Component;</span><br><span class="line"> <span class="number">8</span> </span><br><span class="line"> <span class="number">9</span> <span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line"><span class="number">10</span> <span class="keyword">import</span> java.util.List;</span><br><span class="line"><span class="number">11</span> </span><br><span class="line"><span class="number">12</span> <span class="meta">@Component</span>  <span class="comment">//org.springframework.stereotype.Component</span></span><br><span class="line"><span class="number">13</span> <span class="meta">@Service</span>    <span class="comment">//com.alibaba.dubbo.config.annotation.Service</span></span><br><span class="line"><span class="number">14</span> <span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserServiceImpl</span> <span class="keyword">implements</span> <span class="title class_">UserService</span> &#123;</span><br><span class="line"><span class="number">15</span> </span><br><span class="line"><span class="number">16</span>     <span class="keyword">private</span> <span class="keyword">static</span> List&lt;User&gt; users = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line"><span class="number">17</span> </span><br><span class="line"><span class="number">18</span>     <span class="keyword">static</span> &#123;</span><br><span class="line"><span class="number">19</span>         users.add(<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">1</span>,<span class="string">&quot;fanqi&quot;</span>,<span class="string">&quot;123456&quot;</span>,<span class="number">1</span>));</span><br><span class="line"><span class="number">20</span>         users.add(<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">2</span>,<span class="string">&quot;zhangsan&quot;</span>,<span class="string">&quot;123456&quot;</span>,<span class="number">1</span>));</span><br><span class="line"><span class="number">21</span>         users.add(<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">3</span>,<span class="string">&quot;lisi&quot;</span>,<span class="string">&quot;123456&quot;</span>,<span class="number">1</span>));</span><br><span class="line"><span class="number">22</span>         users.add(<span class="keyword">new</span> <span class="title class_">User</span>(<span class="number">4</span>,<span class="string">&quot;wangwu&quot;</span>,<span class="string">&quot;123456&quot;</span>,<span class="number">1</span>));</span><br><span class="line"><span class="number">23</span>     &#125;</span><br><span class="line"><span class="number">24</span> 	   		</span><br><span class="line"><span class="number">25</span>		<span class="comment">//容错注解</span></span><br><span class="line"><span class="number">26</span>     <span class="meta">@HystrixCommand</span></span><br><span class="line"><span class="number">27</span>     <span class="meta">@Override</span></span><br><span class="line"><span class="number">28</span>     <span class="keyword">public</span> List&lt;User&gt; <span class="title function_">getList</span><span class="params">()</span> &#123;</span><br><span class="line"><span class="number">29</span>         <span class="keyword">return</span> users;</span><br><span class="line"><span class="number">30</span>     &#125;</span><br><span class="line"><span class="number">31</span> &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>4）、在服务消费者调用服务提供者的方法上添加@HystrixCommand注解并指定fallbackMethod属性，重写fallbackMethod指定的方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"> <span class="number">1</span> <span class="keyword">package</span> cn.coreqi.controller;</span><br><span class="line"> <span class="number">2</span> </span><br><span class="line"> <span class="number">3</span> <span class="keyword">import</span> cn.coreqi.entities.User;</span><br><span class="line"> <span class="number">4</span> <span class="keyword">import</span> cn.coreqi.service.UserService;</span><br><span class="line"> <span class="number">5</span> <span class="keyword">import</span> com.alibaba.dubbo.config.annotation.Reference;</span><br><span class="line"> <span class="number">6</span> <span class="keyword">import</span> com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;</span><br><span class="line"> <span class="number">7</span> <span class="keyword">import</span> org.springframework.stereotype.Controller;</span><br><span class="line"> <span class="number">8</span> <span class="keyword">import</span> org.springframework.web.bind.annotation.RequestMapping;</span><br><span class="line"> <span class="number">9</span> <span class="keyword">import</span> org.springframework.web.bind.annotation.ResponseBody;</span><br><span class="line"><span class="number">10</span> </span><br><span class="line"><span class="number">11</span> <span class="keyword">import</span> java.util.List;</span><br><span class="line"><span class="number">12</span> </span><br><span class="line"><span class="number">13</span> <span class="meta">@Controller</span></span><br><span class="line"><span class="number">14</span> <span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserController</span> &#123;</span><br><span class="line"><span class="number">15</span> </span><br><span class="line"><span class="number">16</span>     <span class="meta">@Reference()</span></span><br><span class="line"><span class="number">17</span>     <span class="keyword">private</span> UserService userService;</span><br><span class="line"><span class="number">18</span> 		<span class="comment">//添加此注解</span></span><br><span class="line"><span class="number">19</span>     <span class="meta">@HystrixCommand(fallbackMethod = &quot;test1&quot;)</span></span><br><span class="line"><span class="number">20</span>     <span class="meta">@ResponseBody</span></span><br><span class="line"><span class="number">21</span>     <span class="meta">@RequestMapping(&quot;/users&quot;)</span></span><br><span class="line"><span class="number">22</span>     <span class="keyword">public</span> List&lt;User&gt; <span class="title function_">getUsers</span><span class="params">()</span>&#123;</span><br><span class="line"><span class="number">23</span>         <span class="keyword">return</span> userService.getList();</span><br><span class="line"><span class="number">24</span>     &#125;</span><br><span class="line"><span class="number">25</span> </span><br><span class="line"><span class="number">26</span>     <span class="keyword">public</span> List&lt;User&gt; <span class="title function_">test1</span><span class="params">()</span>&#123;</span><br><span class="line"><span class="number">27</span>         <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line"><span class="number">28</span>     &#125;</span><br><span class="line"><span class="number">29</span> &#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="7-总结"><a href="#7-总结" class="headerlink" title="7. 总结"></a>7. 总结</h2><h3 id="7-1-配置Dubbo的三种方式"><a href="#7-1-配置Dubbo的三种方式" class="headerlink" title="7.1 配置Dubbo的三种方式"></a>7.1 配置Dubbo的三种方式</h3><ul>
+<li><p><code>dubbo.xml</code>来配置属性，使用<code>@ImportResource</code>导入xml配置文件</p>
+</li>
+<li><p><code>application.properties</code>配置属性，使用<code>@Service</code>注解暴露服务，使用<code>@Reference</code>注解来引用服务</p>
+<blockquote>
+<p>需要在启动类加注解<code>@EnableDubbo</code>来开启Dubbo注解的功能</p>
+</blockquote>
+</li>
+<li><p>使用<code>@Configuration</code> 注解来编写配置类，<code>@Bean</code> 编写对应方法</p>
+</li>
+</ul>
+<h3 id="7-2-回顾"><a href="#7-2-回顾" class="headerlink" title="7.2 回顾"></a>7.2 回顾</h3><p>本文主要介绍了</p>
+<ul>
+<li>Dubbo的背景</li>
+<li>Dubbo和Zookeeper安装</li>
+<li>Dubbo和Zookeeper的整合，创建生成者消费者</li>
+<li>Dubbo-Admin、Dubbo-Monitor界面</li>
+<li>Dubbo的常用配置、高可用配置</li>
+</ul>
+<p>在Dubbo的配置这一块中，其实还有很多。更多的东西可以在官网上进行查看学习</p>
+<p>官网是自带中文版的，还是挺舒服的：<a target="_blank" rel="noopener" href="http://dubbo.apache.org/zh/docs/">http://dubbo.apache.org/zh/docs/</a></p>
+<p><img src="https://hopestation.top/upload/2020/12/dz05-8f1b9b9b91f5473faf1cd85b757b39d6.png" alt="dz05"></p>
+<h2 id="8-Peace"><a href="#8-Peace" class="headerlink" title="8. Peace"></a>8. Peace</h2><h3 id="8-1-参考文献"><a href="#8-1-参考文献" class="headerlink" title="8.1 参考文献"></a>8.1 参考文献</h3><ul>
+<li>官网：<a target="_blank" rel="noopener" href="http://dubbo.apache.org/%EF%BC%88%E2%98%86%E2%98%86%E2%98%86%E2%98%86%EF%BC%89">http://dubbo.apache.org/（☆☆☆☆）</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/fanqisoft/category/1395663.html%EF%BC%88%E2%98%86%E2%98%86%E2%98%86%E2%98%86%EF%BC%89">https://www.cnblogs.com/fanqisoft/category/1395663.html（☆☆☆☆）</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/yz357823669/category_8291803.html%EF%BC%88%E2%98%86%E2%98%86%E2%98%86%EF%BC%89">https://blog.csdn.net/yz357823669/category_8291803.html（☆☆☆）</a></li>
+</ul>
+<h4 id="8-2-其他"><a href="#8-2-其他" class="headerlink" title="8.2 其他"></a>8.2 其他</h4><blockquote>
+<p>还有一些不理解的地方，以后再做补充：</p>
+<ul>
+<li>dubbo的本地存根</li>
+<li>Dubbo-admin这个容错按钮和，dubbo整合Hystrix实现容错有什么区别</li>
+</ul>
+</blockquote>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2020/12/04/RabbitMQ%E7%9A%84%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF-rabbitmq%E7%9A%84%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2022-09-22 22:43:16
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Dubbo/" title="Dubbo">
+                        #Dubbo
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2020/12/11/Zookeeper-zookeeper/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Dubbo"><span class="toc-text">Dubbo</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E8%83%8C%E6%99%AF"><span class="toc-text">1. 背景</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8D%95%E4%B8%80%E5%BA%94%E7%94%A8%E6%9E%B6%E6%9E%84"><span class="toc-text">单一应用架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9E%82%E7%9B%B4%E5%BA%94%E7%94%A8%E6%9E%B6%E6%9E%84"><span class="toc-text">垂直应用架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84"><span class="toc-text">分布式服务架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B5%81%E5%8A%A8%E8%AE%A1%E7%AE%97%E6%9E%B6%E6%9E%84"><span class="toc-text">流动计算架构</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-Zookeeper%E5%AE%89%E8%A3%85"><span class="toc-text">2. Zookeeper安装</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E4%B8%8B%E8%BD%BD"><span class="toc-text">2.1 下载</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E8%A7%A3%E5%8E%8B"><span class="toc-text">2.2 解压</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-%E8%BF%90%E8%A1%8C"><span class="toc-text">2.3 运行</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-HelloWorld"><span class="toc-text">3. HelloWorld</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E6%9C%8D%E5%8A%A1%E6%8F%90%E4%BE%9B%E8%80%85"><span class="toc-text">3.1 服务提供者</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-1-%E6%8F%90%E4%BE%9B%E8%80%85-Service"><span class="toc-text">3.1.1 提供者 Service</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-2-%E6%8F%90%E4%BE%9B%E8%80%85-Xml"><span class="toc-text">3.1.2 提供者 Xml</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E6%9C%8D%E5%8A%A1%E6%B6%88%E8%B4%B9%E8%80%85"><span class="toc-text">3.2 服务消费者</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-1-%E8%B0%83%E7%94%A8%E6%8F%90%E4%BE%9B%E8%80%85%E7%9A%84Service"><span class="toc-text">3.2.1 调用提供者的Service</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-2-%E6%B6%88%E8%B4%B9%E8%80%85-Xml"><span class="toc-text">3.2.2 消费者 Xml</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Dubbo-Admin"><span class="toc-text">4. Dubbo-Admin</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E5%AE%89%E8%A3%85"><span class="toc-text">4.1 安装</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-1-%E4%B8%8B%E8%BD%BD"><span class="toc-text">4.1.1 下载</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-2-%E4%BF%AE%E6%94%B9%E9%85%8D%E7%BD%AE"><span class="toc-text">4.1.2 修改配置</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E8%BF%90%E8%A1%8C"><span class="toc-text">4.2 运行</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-2-1-%E5%90%AF%E5%8A%A8Zookeeper"><span class="toc-text">4.2.1 启动Zookeeper</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-2-2-%E5%90%AF%E5%8A%A8Dubbo-Admin"><span class="toc-text">4.2.2 启动Dubbo-Admin</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Dubbo-Monitor"><span class="toc-text">5. Dubbo-Monitor</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%B8%B8%E7%94%A8%E9%85%8D%E7%BD%AE"><span class="toc-text">6. 常用配置</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E9%85%8D%E7%BD%AE%E7%AD%96%E7%95%A5"><span class="toc-text">6.1 配置策略</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#6-1-1-%E5%B1%9E%E6%80%A7%E9%85%8D%E7%BD%AE"><span class="toc-text">6.1.1 属性配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-1-2-XML%E9%85%8D%E7%BD%AE"><span class="toc-text">6.1.2 XML配置</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E5%90%AF%E5%8A%A8%E6%A3%80%E6%9F%A5"><span class="toc-text">6.2.启动检查</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E8%B6%85%E6%97%B6%E6%97%B6%E9%97%B4"><span class="toc-text">6.3 超时时间</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-4-%E9%87%8D%E8%AF%95%E6%AC%A1%E6%95%B0"><span class="toc-text">6.4 重试次数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-5-%E5%A4%9A%E7%89%88%E6%9C%AC"><span class="toc-text">6.5 多版本</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E9%AB%98%E5%8F%AF%E7%94%A8"><span class="toc-text">7. 高可用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1-zookeeper%E5%AE%95%E6%9C%BA"><span class="toc-text">7.1 zookeeper宕机</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-2-Dubbo%E7%9B%B4%E8%BF%9E"><span class="toc-text">7.2 Dubbo直连</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-3-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1"><span class="toc-text">7.3 负载均衡</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-4-%E6%9C%8D%E5%8A%A1%E9%99%8D%E7%BA%A7"><span class="toc-text">7.4 服务降级</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-5-%E9%9B%86%E7%BE%A4%E5%AE%B9%E9%94%99"><span class="toc-text">7.5 集群容错</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-1-Dubbo%E5%AE%B9%E9%94%99%E6%96%B9%E6%A1%88"><span class="toc-text">7.5.1 Dubbo容错方案</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-5-2-%E6%95%B4%E5%90%88Hystrix%E5%AE%9E%E7%8E%B0%E5%AE%B9%E9%94%99"><span class="toc-text">7.5.2 整合Hystrix实现容错</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E6%80%BB%E7%BB%93"><span class="toc-text">7. 总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1-%E9%85%8D%E7%BD%AEDubbo%E7%9A%84%E4%B8%89%E7%A7%8D%E6%96%B9%E5%BC%8F"><span class="toc-text">7.1 配置Dubbo的三种方式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-2-%E5%9B%9E%E9%A1%BE"><span class="toc-text">7.2 回顾</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-Peace"><span class="toc-text">8. Peace</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#8-1-%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="toc-text">8.1 参考文献</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#8-2-%E5%85%B6%E4%BB%96"><span class="toc-text">8.2 其他</span></a></li></ol></li></ol></li></ol></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/under-tow">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/under-tow">Copyright © 2024 undertow</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+  <div class="footer-views">
+      <span id="busuanzi_container_site_pv" style='display:none'>
+          共<span id="busuanzi_value_site_uv"></span>位伙伴访问了本站<span id="busuanzi_value_site_pv"></span>次
+      </span>
+  <div>
+</div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + Dubbo%20%2B%20Zookeeper + '&url=' + https%3A%2F%2Funder2.cn%2F2020%2F12%2F08%2FDubbo%2520%2B%2520Zookeeper-dubbozookeeper%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://under2.cn/2020/12/08/Dubbo%20+%20Zookeeper-dubbozookeeper/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>

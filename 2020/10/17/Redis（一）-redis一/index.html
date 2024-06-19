@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="undertow" />
+
+    <!--  统计鸟  -->
+  <script type="text/javascript" src="//api.tongjiniao.com/c?_=648949077803503616" async></script>
+
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  <meta name="description" content="description" />
+  
+  
+  
+  <title>
+    
+      Redis（一） 
+      
+      
+      |
+    
+     undertow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/dragon.png">
+    <link rel="icon" href="/images/dragon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.1.1"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/dragon.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">undertow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">Redis（一）</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2022-09-22 22:46:49
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Redis/" title="Redis">
+                    #Redis
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <p><strong>目录</strong><br>[TOC]</p>
+<h2 id="Redis是什么？"><a href="#Redis是什么？" class="headerlink" title="Redis是什么？"></a>Redis是什么？</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://redis.io/">Redis官网</a> 、 <a target="_blank" rel="noopener" href="https://www.redis.cn/">中文官网</a></li>
+<li>Redis的全拼是<em>Remote Dictionary Server</em> ，即远程字典服务，是一个开源的使用ANSI C语言编写、支持网络、可基于内存亦可持久化的日志型、Key-Value数据库，并提供多种语言的API；属于常用的NoSQL数据库。<br>（NoSQl：指的是非关系型的数据库。有时也称作Not Only SQL的缩写，是对不同于传统的关系型数据库的数据库管理系统的统称，NoSQL用于超大规模数据的存储。）</li>
+</ul>
+<h2 id="为什么要用Redis？"><a href="#为什么要用Redis？" class="headerlink" title="为什么要用Redis？"></a>为什么要用Redis？</h2><p>Redis可以完成以下功能，或者说一些功能由Redis来完成更为合适：</p>
+<ul>
+<li><p>缓存，对于不需要经常更改，或者更改后的结果不需要实时更新的数据。可以存放在Redis里面，以此来减轻DB的压力</p>
+</li>
+<li><p>排行榜，如果使用传统的关系型数据库来做这个事儿，非常的麻烦，而利用能够非常方便搞定；</p>
+</li>
+<li><p>计算器&#x2F;限速器，利用Redis中原子性的自增操作，我们可以统计类似用户点赞数、用户访问数等，这类操作如果用MySQL，频繁的读写会带来相当大的压力；限速器比较典型的使用场景是限制某个用户访问某个API的频率，常用的有抢购时，防止用户疯狂点击带来不必要的压力；</p>
+</li>
+<li><p>好友关系，利用集合的一些命令，比如求交集、并集、差集等。可以方便搞定一些共同好友、共同爱好之类的功能；</p>
+</li>
+<li><p>简单消息队列，除了Redis自身的发布&#x2F;订阅模式，我们也可以利用List来实现一个队列机制，比如：到货通知、邮件发送之类的需求，不需要高可靠，但是会带来非常大的DB压力，完全可以用List来完成异步解耦；</p>
+</li>
+<li><p>Session共享，以PHP为例，默认Session是保存在服务器的文件中，如果是集群服务，同一个用户过来可能落在不同机器上，这就会导致用户频繁登陆；采用Redis保存Session后，无论用户落在那台机器上都能够获取到对应的Session信息。</p>
+</li>
+</ul>
+<h2 id="如何使用Redis？"><a href="#如何使用Redis？" class="headerlink" title="如何使用Redis？"></a>如何使用Redis？</h2><h3 id="下载安装"><a href="#下载安装" class="headerlink" title="下载安装"></a>下载安装</h3><ul>
+<li>Windows系统（非常简单）</li>
+<li>Linux系统 (比较麻烦)</li>
+</ul>
+<h4 id="Windows系统"><a href="#Windows系统" class="headerlink" title="Windows系统"></a>Windows系统</h4><ol>
+<li><p><a target="_blank" rel="noopener" href="https://github.com/microsoftarchive/redis/releases/tag/win-3.2.100">点击下载压缩包</a>（只有5M大小）</p>
+</li>
+<li><p>解压后目录如下：<br><img src="http://hopestation.top/upload/2020/10/redis_install-70e71d878b5046ec90e7cd31446bcfb1.png" alt="redis_install.png"></p>
+</li>
+<li><p>首先双击运行redis-server.exe启动服务端，（窗口不要关闭，关闭了server就关闭了）</p>
+</li>
+<li><p>然后运行redis-cli.exe<br>然后就可以在命令行中练习Redis的常见命令了</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">ping</span><br><span class="line"><span class="built_in">set</span> google http://www.google</span><br><span class="line">append google .com</span><br><span class="line">get google</span><br><span class="line"><span class="built_in">set</span> visitors 0</span><br><span class="line">incr visitors</span><br><span class="line">incr visitors</span><br><span class="line">get visitors</span><br></pre></td></tr></table></figure></li>
+</ol>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://how2j.cn/k/redis/redis-commands/1369.html">去How2J查看更多命令</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.redis.cn/commands.html">官网命令手册</a></li>
+</ul>
+<h4 id="Linux系统"><a href="#Linux系统" class="headerlink" title="Linux系统"></a>Linux系统</h4><blockquote>
+<p>我是租用的阿里云服务器，远程的linux，本地Linux同理<br>以下手动安装的方式，如果使用宝塔面板应该可以直接安装</p>
+</blockquote>
+<ol>
+<li>下载<br>进入<a target="_blank" rel="noopener" href="https://redis.io/">官网</a>，找到底部的<strong>Download it</strong> 点击显示的最新版本直接就能下载。<br><img src="http://hopestation.top/upload/2020/10/image-abf9ac45944f46a2bac9144344e68bf5.png" alt="image.png"></li>
+<li>把下载文件移动到你的Linux系统上（我是通过宝塔面板上传到服务器上的，本地Linux系统就方便了）</li>
+<li>解压，找到你的文件录取运行<code>tar -zxvf redis-6.0.8.tar.gz</code></li>
+</ol>
+<p><img src="http://hopestation.top/upload/2020/10/image-284cccfa7f0546899f9eb999959c9999.png" alt="image.png"><br>进入解压后的目录<br><img src="http://hopestation.top/upload/2020/10/image-3cfa35df63e948a1a1df202cc5fd26ce.png" alt="image.png"><br> 4. 安装gcc<code>yum install gcc-c++</code><br><img src="http://hopestation.top/upload/2020/10/image-81e3818f9c1d4255a7792687d2517e6a.png" alt="image.png"><br> 5. 在解压目录执行：<code>make</code>编译命令<br> <img src="http://hopestation.top/upload/2020/10/image-1cf6051aaa074dcdb6da30ec80c37319.png" alt="image.png"><br>如果最后这样显示就是编译成功了<br><img src="http://hopestation.top/upload/2020/10/image-67a76def4ea141bc9b82c66890eb5f17.png" alt="image.png"><br>如果是如下面的图，就是编译失败了<br><img src="http://hopestation.top/upload/2020/10/image-63ec70198b1f480499a575d2b563e3c5.png" alt="image.png"><br>失败的可以尝试以下两种方式解决：</p>
+<ul>
+<li><p>更新gcc</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo yum install centos-release-scl</span><br><span class="line">sudo yum install devtoolset-7-gcc*</span><br><span class="line">scl <span class="built_in">enable</span> devtoolset-7 bash</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>或降低redis版本</p>
+</li>
+</ul>
+<ol start="6">
+<li>在解压目录执行：<code>make install</code>安装命令<br><img src="http://hopestation.top/upload/2020/10/image-9ebad1c1517d4e69a777c0946eb46516.png" alt="image.png"></li>
+<li>Redis默认安装路径 <code>/usr/local/bin</code><br><img src="http://hopestation.top/upload/2020/10/image-8df05d7cef6a453982e958de6b2d78de.png" alt="image.png"></li>
+<li>移动配置文件并进行设置（直接贴图了）<br><img src="http://hopestation.top/upload/2020/10/image-97e2430ddcef41feb455ef6f43c471f1.png" alt="image.png"><br>编辑该文件，修改：<code>daemonize no</code> 为 <code>daemonize yes</code><br><img src="http://hopestation.top/upload/2020/10/image-0b90bdb850124ab2a1b4d074b23db4ce.png" alt="image.png"><br><img src="http://hopestation.top/upload/2020/10/image-418672be944c48db93d5f46252af4559.png" alt="image.png"><br>然后输入<code>:wq</code>退出</li>
+<li>启动Redis<br>利用我们的配置来启动redis服务，执行<code>redis-server redis-config/redis.conf </code><br><img src="http://hopestation.top/upload/2020/10/image-dbf69877dc534f33b03e148a9b566c20.png" alt="image.png"><br>再启动redsi客户端，执行<code>redis-cli -p 6379</code><br><img src="http://hopestation.top/upload/2020/10/image-8bb6f5559fd342b7bc1dbbe950458e6d.png" alt="image.png"></li>
+<li>常用命令<br>查看redis的进程是否开启<code># ps -ef|grep redis</code><br><img src="http://hopestation.top/upload/2020/10/image-6224ef49a536478d8c57d0e918ae2e37.png" alt="image.png"><br>关闭redis服务,再客户端输入<code>shutdown</code>,然后<code>exit</code>退出客户端就可以了<br><img src="http://hopestation.top/upload/2020/10/image-680899f5320242f09fdbf5d0ce6f8ff4.png" alt="image.png"><br>再次查看已经没有了<br><img src="http://hopestation.top/upload/2020/10/image-1e12b70f12af4272ba5c7cbf02ff8dae.png" alt="image.png"></li>
+</ol>
+<h3 id="性能测试"><a href="#性能测试" class="headerlink" title="性能测试"></a>性能测试</h3><blockquote>
+<p>我是在Windows系统上操作的，Linux同理</p>
+</blockquote>
+<p>在解压目录下打开命令行，输入下面的命令：<br><code>.\redis-benchmark.exe -h localhost -p 6379 -c 10 -n 5000</code><br>测试10个并发连接，10000个请求<br><img src="http://hopestation.top/upload/2020/10/image-ba8b655484d34a538d73ea4cce5d4d7e.png" alt="image.png"><br>参数如下：<br><img src="http://hopestation.top/upload/2020/10/image-1b3f394aefb74e3094d1a11a8bb96821.png" alt="image.png"></p>
+<hr>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://hopestation.top/tags/redis">查看Redis归档 </a></li>
+<li>下一篇：<a target="_blank" rel="noopener" href="http://hopestation.top/archives/redis2">Redis（二）介绍了Redis的常用操作，基础知识和数据类型 </a></li>
+</ul>
+<hr>
+<p><strong>参考资料</strong></p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/jebysun/p/9417699.html">大愚Talk：为什么要用Redis</a></li>
+<li><a target="_blank" rel="noopener" href="https://how2j.cn/">how2j</a></li>
+<li><a target="_blank" rel="noopener" href="https://space.bilibili.com/95256449?from=search&seid=13287490402742747071">狂神说</a></li>
+</ul>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2020/10/14/SpringCLoud%E4%B8%AA%E4%BA%BA%E6%80%BB%E7%BB%93-springcloud%E4%B8%AA%E4%BA%BA%E6%80%BB%E7%BB%93/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2022-09-22 22:46:49
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Redis/" title="Redis">
+                        #Redis
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2020/10/20/Redis%EF%BC%88%E4%BA%8C%EF%BC%89-redis%E4%BA%8C/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Redis%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="toc-text">Redis是什么？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E7%94%A8Redis%EF%BC%9F"><span class="toc-text">为什么要用Redis？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8Redis%EF%BC%9F"><span class="toc-text">如何使用Redis？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8B%E8%BD%BD%E5%AE%89%E8%A3%85"><span class="toc-text">下载安装</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Windows%E7%B3%BB%E7%BB%9F"><span class="toc-text">Windows系统</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Linux%E7%B3%BB%E7%BB%9F"><span class="toc-text">Linux系统</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95"><span class="toc-text">性能测试</span></a></li></ol></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/under-tow">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/under-tow">Copyright © 2024 undertow</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+  <div class="footer-views">
+      <span id="busuanzi_container_site_pv" style='display:none'>
+          共<span id="busuanzi_value_site_uv"></span>位伙伴访问了本站<span id="busuanzi_value_site_pv"></span>次
+      </span>
+  <div>
+</div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + Redis%EF%BC%88%E4%B8%80%EF%BC%89 + '&url=' + https%3A%2F%2Funder2.cn%2F2020%2F10%2F17%2FRedis%25EF%25BC%2588%25E4%25B8%2580%25EF%25BC%2589-redis%25E4%25B8%2580%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://under2.cn/2020/10/17/Redis%EF%BC%88%E4%B8%80%EF%BC%89-redis%E4%B8%80/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="undertow" />
+
+    <!--  统计鸟  -->
+  <script type="text/javascript" src="//api.tongjiniao.com/c?_=648949077803503616" async></script>
+
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  <meta name="description" content="description" />
+  
+  
+  
+  <title>
+    
+      ElasticSearch（入门篇） 
+      
+      
+      |
+    
+     undertow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/dragon.png">
+    <link rel="icon" href="/images/dragon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.1.1"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/dragon.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">undertow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">ElasticSearch（入门篇）</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2022-09-22 22:43:19
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/ElasticSearch/" title="ElasticSearch">
+                    #ElasticSearch
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <h1 id="ElasticSearch"><a href="#ElasticSearch" class="headerlink" title="ElasticSearch"></a>ElasticSearch</h1><blockquote>
+<p>版本 ElasticSearch 7.6.1</p>
+<p>讲解初级阶段 ELK的 E 和 K</p>
+</blockquote>
+<h2 id="Why？"><a href="#Why？" class="headerlink" title="Why？"></a>Why？</h2><p>为什么要用ElasticSearch</p>
+<p>原来SQL实现模糊查询时<code>%xxx%</code>，如果是大数据，就十分慢！可以使用索引！</p>
+<p>ElasticSearchL：就是用来做搜索的！（百度、Github、淘宝电商）</p>
+<h2 id="Lucene"><a href="#Lucene" class="headerlink" title="Lucene"></a>Lucene</h2><p>是一套信息检索工具包！jar包不包含所所引起系统！</p>
+<p>包含的：索引结构！读写索引的工具！排序，搜索规则..工具类！</p>
+<p>ElasticSearch是基于Lucene做了一些封装和增强。上手简单</p>
+<p><strong>ElasticSearch vs Solr 总结</strong><br>1、es基本是开箱即用(解压就可以用！)，非常简单。Solr安装略微复杂一丢丢！</p>
+<p>2.Solr利用Zookeeper进行分布式管理，而Elasticsearch自身带有分布式协调管理功能。</p>
+<p>3、Solr支持更多格式的数据，比如JSON、XML、CSV，而Elasticsearch仅支持json文件格式。</p>
+<p>4、Solr 官方提供的功能更多，而 Elasticsearch 本身更注重于核心功能，高级功能多有第三方插件提供，例如图形化界面需要kibana友好支撑-！</p>
+<p>5、Solr 查询快，但更新索引时慢(即插入删除慢)，用于电商等查询多的应用；<br>·ES建立索引快(即查询慢)，即实时性查询快，用于facebook新浪等搜索。<br>· Solr是传统搜索应用的有力解决方案，但Elasticsearch更适用于新兴的实时搜索应用。</p>
+<p>6、Solr比较成熟，有一个更大，更成熟的用户、开发和贡献者社区，而Elasticsearch相对开发维护者较少，更新太快，学习使用   成本较高。</p>
+<h2 id="ElasticSearch概述"><a href="#ElasticSearch概述" class="headerlink" title="ElasticSearch概述"></a>ElasticSearch概述</h2><p>Elaticsearch，简称为es，es是一个开源的高扩展的<strong>分布式全文检索引擎</strong>，它可以近乎<strong>实时的存储</strong>、<strong>检索数据</strong>；本身扩展性很好，可以扩展到上百台服务器，处理PB级别的数据。es也使用Java开发并使用Lucene作为其核心来实现所有索引和搜索的功能，但是它的目的是通过简单的<strong>RESTful API</strong>来隐藏Lucene的复杂性，从而让全文搜索变得简单。<br>据国际权威的数据库产品评测机构DB Engines的统计，在2016年1月，ElasticSearch已超过Solr等，成为<strong>排名第一的搜索引擎类应用</strong>。</p>
+<p><strong>历史：</strong></p>
+<p>多年前，一个叫做Shay Banon的刚结婚不久的失业开发者，由于妻子要去伦敦学习厨师，他便跟着也去了。在他找工作的过程中，为了给妻子构建一个食谱的搜索引擎，他开始构建一个早期版本的Lucene.<br>直接基于Lucene工作会比较困难，所以Shay开始抽象Lucene代码以便java程序员可以在应用中添加搜索功能。他发布了他的第一个开源项目，叫做“Compass”。<br>后来Shay找到一份工作，这份工作处在高性能和内存数据网格的分布式环境中，因此高性能的、实时的、分布式的搜索引擎也是理所当然需要的。然后他决定重写Compass库使其成为一个独立的服务叫做<strong>Elasticsearch</strong>.<br>第一个公开版本出现在2010年2月，在那之后Elasticsearch已经成为Github上最受欢迎的项目之一，代码贡献者超过300人。一家主营Elasticsearch的公司就此成立，他们一边提供商业支持一边开发新功能，不过Elasticsearch将永远开源且对所有人可用。</p>
+<p>Shay的妻子依旧等待着她的食谱搜索…</p>
+<p><strong>谁在用：</strong></p>
+<p>谁在使用：<br>1、维基百科，类似百度百科，全文检索，高亮，搜索推荐&#x2F;2(权重)<br>2、The Guardian (国外新闻网站)，类似搜狐新闻，用户行为日志(点击，浏览，收藏，评论)+社交网络数据(对某某新闻的相关看法)，数据分析，给到每篇新闻文章的作者，让他知道他的文章的公众反馈(好，坏，热门，垃圾，鄙视，崇拜)<br>3、Stack Overflow(国外的程序异常讨论论坛)，IT问题，程序的报错，提交上去，有人会跟你讨论和回答，全文检索，搜索相关问题和答案，程序报错了，就会将报错信息粘贴到里面去，搜索有没有对应的答案<br>4、 GitHub (开源代码管理)，搜索上千亿行代码<br>5、电商网站，检索商品<br>6、日志数据分析，logstash采集日志，ES进行复杂的数据分析，ELK技术，elasticsearch+logstash+kibana<br>7、商品价格监控网站，用户设定某商品的价格闻值，当低于该崗值的时候，发送通知消息给用户，比如说订阅牙膏的监控，如果高露洁牙膏的家庭套装低于50块钱，就通知我，我就去买<br>10.0%<br>8、BI系统，商业智能，Business Intelligence。比如说有个大型商场集团，B1，分析一下某某区域最近3年的用户消费金额的趋势以及用户群体的组成构成，产出相关的数张报表，**区，最近3年，每年消费金额呈现100%的增长，而且用户群体85%是高级白领，开一个新商场。ES执行数据分析和挖掘，Kibana进行数据可视化</p>
+<p>9、国内：站内搜索(电商，招聘，门户，等等)，IT系统搜索(OA，CRM，ERP，等等)，数据分析(ES热门<br>的一个使用场景)</p>
+<blockquote>
+<p>说明ElasticSearch还是非常重要的！</p>
+</blockquote>
+<h2 id="架构选择"><a href="#架构选择" class="headerlink" title="架构选择"></a>架构选择</h2><p>什么时候选 es?</p>
+<p>什么时候选 solr?</p>
+<p>什么时候选 luence?</p>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><blockquote>
+<p>这里介绍的是Windows版的安装</p>
+</blockquote>
+<h3 id="1-安装ES"><a href="#1-安装ES" class="headerlink" title="1 安装ES"></a>1 安装ES</h3><p>需要安装JDK1.8或以上版本</p>
+<p><img src="https://gitee.com/hopestation/typora/raw/master/images/202101/24/223128-12019.png" alt="image-20201210232953551"></p>
+<p>解压</p>
+<p><img src="https://gitee.com/hopestation/typora/raw/master/images/202101/24/223756-984547.png" alt="img"></p>
+<ul>
+<li>bin 启动文件</li>
+<li>config 配置文件</li>
+<li>log4j2 口志配置文件</li>
+<li>java虚拟机相关的配置</li>
+<li>jvm.options</li>
+<li>libelasticsearch.yml elasticsearch 的配置文件！ 默认 9200端口！跨域！</li>
+<li>logs 相关jar包</li>
+<li>日志！</li>
+<li>modules 功能模块</li>
+<li>plugins 插件！</li>
+</ul>
+<p>es是比较占内存的，假如怕内存不足的，开源修改这个文件：<code>elasticsearch-7.10.1\config\jvm.options</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Xms represents the initial size of total heap space</span></span><br><span class="line"><span class="comment"># Xmx represents the maximum size of total heap space</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 原来都是 -Xms1g 我怕电脑扛不住  就改成了 256 和 512</span></span><br><span class="line">-Xms256m</span><br><span class="line">-Xmx512m</span><br></pre></td></tr></table></figure>
+
+<p>然后在 <code>elasticsearch-7.10.1\config\elasticsearch.yml</code> 文件底下增加两句话，解决跨域问题</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#注意 ‘:’后面是有空格的，需要符合yml的格式</span></span><br><span class="line">http.cors.enabled: <span class="literal">true</span></span><br><span class="line">http.cors.allow-origin: <span class="string">&quot;*&quot;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>访问 ：<a target="_blank" rel="noopener" href="http://localhost:9200/">http://localhost:9200/</a> 结果如下：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;DESKTOP-xxxx&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;cluster_name&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;elasticsearch&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;cluster_uuid&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;nQIXkur2RMWFjO1_mLNMHQ&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;version&quot;</span> <span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;number&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;7.10.1&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;build_flavor&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;default&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;build_type&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;zip&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;build_hash&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;1c34507e66d7db1211f66f3513706fdf548736aa&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;build_date&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;2020-12-05T01:00:33.671820Z&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;build_snapshot&quot;</span> <span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;lucene_version&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;8.7.0&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;minimum_wire_compatibility_version&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;6.8.0&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;minimum_index_compatibility_version&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;6.0.0-beta1&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;tagline&quot;</span> <span class="punctuation">:</span> <span class="string">&quot;You Know, for Search&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="2-安装-ES-head"><a href="#2-安装-ES-head" class="headerlink" title="2  安装 ES head"></a>2  安装 ES head</h3><p>Github下载：<a target="_blank" rel="noopener" href="https://github.com/mobz/elasticsearch-head">https://github.com/mobz/elasticsearch-head</a></p>
+<p>解压</p>
+<p><img src="https://gitee.com/hopestation/typora/raw/master/images/202101/24/223136-222638.png" alt="image-20201211000129666"></p>
+<p>运行命令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">npm install</span><br><span class="line">npm run start</span><br></pre></td></tr></table></figure>
+
+<p>访问 ：<a target="_blank" rel="noopener" href="http://localhost:9100/">http://localhost:9100/</a> 结果如下：</p>
+<p><img src="https://hopestation.top/upload/2020/12/es01-0701069118cd45348b3b99c2d0c36caf.png" alt="es01"></p>
+<p>如果在控制台出现，就是由于上面es的跨域配置没有配，或者没有重启</p>
+<p><img src="https://hopestation.top/upload/2020/12/es02-29eb2d9444fb44edb9caa7df57ff478b.png" alt="es02"></p>
+<h3 id="3-创建索引"><a href="#3-创建索引" class="headerlink" title="3 创建索引"></a>3 创建索引</h3><p>随便写一个索引名称，我写的是<code>hopestation</code></p>
+<p><img src="https://hopestation.top/upload/2020/12/es03-3e51e0642f02409d9bdaf448c86f9c06.png" alt="es03"></p>
+<p>暂时把索引当成一个数据库，创界成功后显示</p>
+<p><img src="https://hopestation.top/upload/2020/12/es04-1ebe6d62ba274fb4bfff143ca9632c73.png" alt="es04"></p>
+<p>建议只把head当做一个数据展示工具！后面的查询在 Kibana里做</p>
+<h2 id="ELK"><a href="#ELK" class="headerlink" title="ELK"></a>ELK</h2><p>不太理解 先占坑</p>
+<h2 id="Kibana安装"><a href="#Kibana安装" class="headerlink" title="Kibana安装"></a>Kibana安装</h2><p>下载地址：<a target="_blank" rel="noopener" href="https://www.elastic.co/cn/downloads/kibana">https://www.elastic.co/cn/downloads/kibana</a></p>
+<p>解压后的目录</p>
+<p><img src="https://hopestation.top/upload/2020/12/kibana01-518e3c2d296148a0b35a4ca7d1da86d4.png" alt="kibana01"></p>
+<p>运行 <code>kibana-7.10.1-windows-x86_64\bin\kibana.bat</code></p>
+<p>访问：<a target="_blank" rel="noopener" href="http://localhost:5601/">http://localhost:5601</a></p>
+<p>默认是英文界面，我用谷歌翻译了一下</p>
+<p><img src="https://hopestation.top/upload/2020/12/es05-04b34807d02e4f5a89f289fb10d66def.png" alt="es05"></p>
+<p>测试工具有：</p>
+<p>postman、curl、head、谷歌浏览器插件，但还是推荐Kibana</p>
+<p>来输入命令测试一下：</p>
+<p>接着上面那个图，点击 <strong>独自探索</strong>，然后选择 <strong>DevTool</strong></p>
+<p><img src="https://hopestation.top/upload/2020/12/kibanda02-0b427135911f498185c2f57d3cfd6fd9.png" alt="kibanda02"></p>
+<p>输入命令，运行</p>
+<p><img src="https://hopestation.top/upload/2020/12/kibanda03-63ef92543f64479286cf441a7851cd04.png" alt="kibanda03"></p>
+<h4 id="汉化"><a href="#汉化" class="headerlink" title="汉化"></a>汉化</h4><p>修改 <code>kibana-7.10.1-windows-x86_64\config\kibana.yml</code> 最下面一段话 配置语言</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Specifies locale to be used for all localizable strings, dates and number formats.</span></span><br><span class="line"><span class="comment"># Supported languages are the following: English - en , by default , Chinese - zh-CN .</span></span><br><span class="line"><span class="comment">#i18n.locale: &quot;en&quot;</span></span><br><span class="line">i18n.locale: <span class="string">&quot;zh-CN&quot;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>在运行了的程序后，我们再通过head来查看一下，es的情况</p>
+<p>也就是说ES默认就是集群，而集群名称就是 elasticsearch</p>
+<p><img src="https://hopestation.top/upload/2020/12/es06-3f493f2266d746818ff19192b36f2774.png" alt="es06"></p>
+<p>集群名称</p>
+<p><img src="https://hopestation.top/upload/2020/12/es07-1f9d7ddea8964072b1909eb8db7d579e.png" alt="es07"></p>
+<h2 id="核心概念"><a href="#核心概念" class="headerlink" title="核心概念"></a>核心概念</h2><p>ES是面向文档的，同时一切都是 JSON 格式</p>
+<table>
+<thead>
+<tr>
+<th>DB</th>
+<th>ES</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据库（database）</td>
+<td>索引(indexs)</td>
+</tr>
+<tr>
+<td>表(tables)</td>
+<td>types (慢慢会被弃用，可能8.0开始)</td>
+</tr>
+<tr>
+<td>rows</td>
+<td>documents</td>
+</tr>
+<tr>
+<td>columns</td>
+<td>fileds</td>
+</tr>
+</tbody></table>
+<p><strong>在es中</strong>：</p>
+<p>es（集群）中可以包含多个索引（数据库），每个索引可以包含多个类型（表），每个类型下又包含多个 文档（行），每个文档中又包含多个字段（列）</p>
+<p><strong>1 物理设计：</strong></p>
+<p>es在后台把每个索引划分成多个分片，每个分片可以在集群汇总</p>
+<p><strong>2 逻辑设计</strong>：<br>一个索引类型中，包含多个文档，比如说文档1，文档2。当我们索引一篇文档时，可以通过这样的一各顺序找到它：索引 -&gt; 类型 -&gt; 文档ID，通过这个组合我们就能索引到某个具体的文档。注意：ID不必是整数，实际上它是个字符串。</p>
+<p><strong>3 文档</strong><br>之前说elasticsearch是面向文档的，那么就意味着索引和搜索数据的最小单位是文档，elasticsearch中，文档有几个 重要属性：</p>
+<ul>
+<li>自我包含，一篇文档同时包含字段和对应的值，也就是同时包含key:value！</li>
+<li>可以是层次型的，一个文档中包含自文档，复杂的逻辑实体就是这么来的！(就是一个JSON对象，fastjson可以自动转换)</li>
+<li>灵活的结构，文档不依赖预先定义的模式，我们知道关系型数据库中，要提前定义字段才能使用，在elasticsearch中，对于字段是非常灵活的，有时候，我们可以忽略该字段，或者动态的添加一个新的字段。</li>
+</ul>
+<p>尽管我们可以随意的新增或者忽略某个字段，但是，每个字段的类型非常重要，比如一个年龄字段类型，可以是字符 串也可以是整形。因为elasticsearch会保存字段和类型之间的映射及其他的设置。这种映射具体到每个映射的每种类型，这也是为什么在elasticsearch中，类型有时候也称为映射类型。</p>
+<p><strong>4 类型</strong></p>
+<p>类型是文档的逻辑容器，就像关系型数据库一样，表格是行的容器。 类型中对于字段的定义称为映射，比如 name 映 射为字符串类型。 我们说文档是无模式的，它们不需要拥有映射中所定义的所有字段，比如新增一个字段，那么elasticsearch是怎么做的呢？elasticsearch会自动的将新字段加入映射，但是这个字段的不确定它是什么类型，elasticsearch就开始猜，如果这个值是18，那么elasticsearch会认为它是整形。但是elasticsearch也可能猜不对，所以最安全的方式就是提前定义好所需要的映射，这点跟关系型数据库殊途同归了，先定义好字段，然后再使用，别整什么幺蛾子。</p>
+<p><strong>5 索引</strong> </p>
+<p>索引是映射类型的容器，elasticsearch中的索引是一个非常大的文档集合。索引存储了映射类型的字段和其他设置。然后它们被存储到了各个分片上了。我们来研究下分片是如何工作的。<br>物理设计：节点和分片如何工作<br>一个集群至少有一个节点，而一个节点就是一个elasricsearch进程，节点可以有多个索引默认的，如果你创建索引，那么索引将会有个5个分片(primary shard,又称主分片)构成的，每一个主分片会有一个副本(replica shard，又称复制分片)</p>
+<h2 id="IK分词器安装"><a href="#IK分词器安装" class="headerlink" title="IK分词器安装"></a>IK分词器安装</h2><p>分词：即把一段中文或者别的划分成<strong>一个个的关键字</strong></p>
+<p>也是windows的安装</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/medcl/elasticsearch-analysis-ik">https://github.com/medcl/elasticsearch-analysis-ik</a></p>
+<p>1 下载后解压，然后使用进入解压目录执行，maven打包</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mvn clean package -DskipTests</span><br></pre></td></tr></table></figure>
+
+<p>2 进入target—&gt;release：是一个压缩包，然后解压</p>
+<p><img src="https://gitee.com/hopestation/typora/raw/master/images/202101/24/223145-168311.png" alt="image-20210118235641685"></p>
+<p>3 放入插件目录</p>
+<p><img src="https://gitee.com/hopestation/typora/raw/master/images/202101/24/223146-904483.png" alt="image-20210118235908488"></p>
+<p>接下来需要重启ES</p>
+<p>要保证IK分词器，和ES的版本支持，不然会出现ES闪退，无法打开的情况</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#版本不支持 异常</span></span><br><span class="line">java.lang.IllegalArgumentException: Plugin [analysis-ik] was built <span class="keyword">for</span> Elasticsearch version 7.10.0 but version 7.10.1 is running</span><br><span class="line">        at org.elasticsearch.plugins.PluginsService.verifyCompatibility(PluginsService.java:352)</span><br><span class="line">        at org.elasticsearch.plugins.PluginsService.loadBundle(PluginsService.java:622)</span><br><span class="line">        at org.elasticsearch.plugins.PluginsService.loadBundles(PluginsService.java:479)</span><br><span class="line">        at org.elasticsearch.plugins.PluginsService.&lt;init&gt;(PluginsService.java:168)</span><br><span class="line">        at org.elasticsearch.node.Node.&lt;init&gt;(Node.java:346)</span><br><span class="line">        at org.elasticsearch.node.Node.&lt;init&gt;(Node.java:289)</span><br><span class="line">        at org.elasticsearch.bootstrap.Bootstrap<span class="variable">$5</span>.&lt;init&gt;(Bootstrap.java:227)</span><br><span class="line">        at org.elasticsearch.bootstrap.Bootstrap.setup(Bootstrap.java:227)</span><br><span class="line">        at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:393)</span><br><span class="line">        at org.elasticsearch.bootstrap.Elasticsearch.init(Elasticsearch.java:170)</span><br><span class="line">        at org.elasticsearch.bootstrap.Elasticsearch.execute(Elasticsearch.java:161)</span><br><span class="line">        at org.elasticsearch.cli.EnvironmentAwareCommand.execute(EnvironmentAwareCommand.java:86)</span><br><span class="line">        at org.elasticsearch.cli.Command.mainWithoutErrorHandling(Command.java:127)</span><br><span class="line">        at org.elasticsearch.cli.Command.main(Command.java:90)</span><br><span class="line">        at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:126)</span><br><span class="line">        at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:92)</span><br><span class="line">For complete error details, refer to the <span class="built_in">log</span> at F:\CodeSoft\elasticsearch\elasticsearch-7.10.1\logs\elasticsearch.log</span><br></pre></td></tr></table></figure>
+
+<p>没关系修改一下，这个就好了：<code>elasticsearch-7.10.1\plugins\ik\plugin-descriptor.properties</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># &#x27;elasticsearch.version&#x27; version of elasticsearch compiled against</span></span><br><span class="line"><span class="comment"># You will have to release a new version of the plugin for each new</span></span><br><span class="line"><span class="comment"># elasticsearch release. This version is checked when the plugin</span></span><br><span class="line"><span class="comment"># is loaded so Elasticsearch will refuse to start in the presence of</span></span><br><span class="line"><span class="comment"># plugins with the incorrect elasticsearch.version.</span></span><br><span class="line"><span class="comment">#修改成你的 es 版本</span></span><br><span class="line">elasticsearch.version=7.10.0</span><br></pre></td></tr></table></figure>
+
+<p>使用插件命令</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">xxx\elasticsearch-<span class="number">7</span>.<span class="number">10</span>.<span class="number">1</span>\bin&gt;elasticsearch-plugin list</span><br><span class="line">future versions of Elasticsearch will require Java <span class="number">11</span>; your Java version from [C:\Program Files\Java\jdk1.<span class="number">8</span>.<span class="number">0</span>_221\jre] does <span class="keyword">not</span> meet this requirement</span><br><span class="line">ik</span><br><span class="line"><span class="function">WARNING: <span class="title">plugin</span> [<span class="title">analysis</span>-<span class="title">ik</span>] <span class="title">was</span> <span class="title">built</span> <span class="title">for</span> <span class="title">Elasticsearch</span> <span class="title">version</span> 7.4.0 <span class="title">but</span> <span class="title">version</span> 7.10.1 <span class="title">is</span> <span class="title">required</span></span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="使用IK"><a href="#使用IK" class="headerlink" title="使用IK"></a>使用IK</h3><p>1 启动es</p>
+<p>2 启动kibana</p>
+<p><strong>分词</strong>：即把一段中文或者别的划分成<strong>一个个的关键字</strong>,我们在搜索时候会把自己的信息进行分词，会把数据库中或者索引库中的数据进行分词，然后进行一个匹配操作，默认的中文分词是将每个字看成一个词，比如“我爱中国”会被分为”我”，“爱”，“中”，“过” ,这显然是不符合要求的，所以我们需要安装中文分词器ik来解决这个问题。</p>
+<p>IK提供了两个分词算法: <code>ik_ smart</code>和<code>ik_ max_ word</code> ，</p>
+<p>其中</p>
+<ul>
+<li><code>ik_ smart</code>为最少切分</li>
+<li>ik_ max_ word&#96;为最细粒度划分!（穷尽词库的所有可能）</li>
+</ul>
+<p>下面来使用kibana进行请求，感受一下结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">GET _analyze</span><br><span class="line">&#123;</span><br><span class="line">  <span class="string">&quot;analyzer&quot;</span>: <span class="string">&quot;ik_smart&quot;</span>,</span><br><span class="line">  <span class="string">&quot;text&quot;</span>: <span class="string">&quot;我爱吃汉堡包&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">GET _analyze</span><br><span class="line">&#123;</span><br><span class="line">  <span class="string">&quot;analyzer&quot;</span>: <span class="string">&quot;ik_smart&quot;</span>,</span><br><span class="line">  <span class="string">&quot;text&quot;</span>: <span class="string">&quot;中国共产党&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">GET _analyze</span><br><span class="line">&#123;</span><br><span class="line">  <span class="string">&quot;analyzer&quot;</span>: <span class="string">&quot;ik_max_word&quot;</span>,</span><br><span class="line">  <span class="string">&quot;text&quot;</span>: <span class="string">&quot;我爱吃汉堡包&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">GET _analyze</span><br><span class="line">&#123;</span><br><span class="line">  <span class="string">&quot;analyzer&quot;</span>: <span class="string">&quot;ik_max_word&quot;</span>,</span><br><span class="line">  <span class="string">&quot;text&quot;</span>: <span class="string">&quot;中国共产党&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后一条一条的执行。自行查看结果，如下：</p>
+<p><img src="https://gitee.com/hopestation/typora/raw/master/images/202101/24/223148-138123.png" alt="image-20210119224517800"></p>
+<p>但有时候我们的单词，并没有再词库了。会被拆分，那如何添加自己的词库呢？</p>
+<p><img src="https://gitee.com/hopestation/typora/raw/master/images/202101/24/223151-418354.png" alt="image-20210119225138371"></p>
+<p>首先ES的插件配置文件中增加配置：elasticsearch-7.10.1\plugins\ik\config\IKAnalyzer.cfg.xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;UTF-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">properties</span> <span class="keyword">SYSTEM</span> <span class="string">&quot;http://java.sun.com/dtd/properties.dtd&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">comment</span>&gt;</span>IK Analyzer 扩展配置<span class="tag">&lt;/<span class="name">comment</span>&gt;</span></span><br><span class="line">	<span class="comment">&lt;!--用户可以在这里配置自己的扩展字典 : 配置我自己的字典取名叫hope.dic --&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">entry</span> <span class="attr">key</span>=<span class="string">&quot;ext_dict&quot;</span>&gt;</span>hope.dic<span class="tag">&lt;/<span class="name">entry</span>&gt;</span></span><br><span class="line">	 <span class="comment">&lt;!--用户可以在这里配置自己的扩展停止词字典--&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">entry</span> <span class="attr">key</span>=<span class="string">&quot;ext_stopwords&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">entry</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>然后新建一个文件 elasticsearch-7.10.1\plugins\ik\config\hope.dic</p>
+<p>内容就是你的单词，咱们先只加一个试一试</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">狂神说</span><br></pre></td></tr></table></figure>
+
+<p>然后重启，再次执行请求。就好了，so easy, too happy</p>
+<p><img src="https://gitee.com/hopestation/typora/raw/master/images/202101/24/223155-844001.png" alt="image-20210119225904657"></p>
+<p>就记录到这里了。</p>
+<p>发现这篇博客总结的比我好一些 - -！</p>
+<blockquote>
+<p>推荐一下吧：<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_40087648/article/details/110664047?utm_medium=distribute.pc_relevant.none-task-blog-baidujs_title-7&spm=1001.2101.3001.4242">https://blog.csdn.net/qq_40087648/article/details/110664047?utm_medium=distribute.pc_relevant.none-task-blog-baidujs_title-7&amp;spm=1001.2101.3001.4242</a></p>
+</blockquote>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2021/01/23/Typora%E8%87%AA%E5%8A%A8%E4%B8%8A%E4%BC%A0%E5%9B%BE%E7%89%87-typora%E8%87%AA%E5%8A%A8%E4%B8%8A%E4%BC%A0%E5%9B%BE%E7%89%87/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2022-09-22 22:43:19
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/ElasticSearch/" title="ElasticSearch">
+                        #ElasticSearch
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2021/01/24/%E8%81%8A%E8%81%8A%20Elasticsearch%20%E7%9A%84%E5%80%92%E6%8E%92%E7%B4%A2%E5%BC%95%EF%BC%88%E8%BD%AC%EF%BC%89-%E8%81%8A%E8%81%8Aelasticsearch%E7%9A%84%E5%80%92%E6%8E%92%E7%B4%A2%E5%BC%95%E8%BD%AC/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#ElasticSearch"><span class="toc-text">ElasticSearch</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Why%EF%BC%9F"><span class="toc-text">Why？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Lucene"><span class="toc-text">Lucene</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ElasticSearch%E6%A6%82%E8%BF%B0"><span class="toc-text">ElasticSearch概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9E%B6%E6%9E%84%E9%80%89%E6%8B%A9"><span class="toc-text">架构选择</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85"><span class="toc-text">安装</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%AE%89%E8%A3%85ES"><span class="toc-text">1 安装ES</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%AE%89%E8%A3%85-ES-head"><span class="toc-text">2  安装 ES head</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%88%9B%E5%BB%BA%E7%B4%A2%E5%BC%95"><span class="toc-text">3 创建索引</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ELK"><span class="toc-text">ELK</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kibana%E5%AE%89%E8%A3%85"><span class="toc-text">Kibana安装</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B1%89%E5%8C%96"><span class="toc-text">汉化</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5"><span class="toc-text">核心概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IK%E5%88%86%E8%AF%8D%E5%99%A8%E5%AE%89%E8%A3%85"><span class="toc-text">IK分词器安装</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8IK"><span class="toc-text">使用IK</span></a></li></ol></li></ol></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/under-tow">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/under-tow">Copyright © 2024 undertow</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+  <div class="footer-views">
+      <span id="busuanzi_container_site_pv" style='display:none'>
+          共<span id="busuanzi_value_site_uv"></span>位伙伴访问了本站<span id="busuanzi_value_site_pv"></span>次
+      </span>
+  <div>
+</div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + ElasticSearch%EF%BC%88%E5%85%A5%E9%97%A8%E7%AF%87%EF%BC%89 + '&url=' + https%3A%2F%2Funder2.cn%2F2021%2F01%2F24%2FElasticSearch%25EF%25BC%2588%25E5%2585%25A5%25E9%2597%25A8%25E7%25AF%2587%25EF%25BC%2589-elasticsearch%25E5%2585%25A5%25E9%2597%25A8%25E7%25AF%2587%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://under2.cn/2021/01/24/ElasticSearch%EF%BC%88%E5%85%A5%E9%97%A8%E7%AF%87%EF%BC%89-elasticsearch%E5%85%A5%E9%97%A8%E7%AF%87/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>

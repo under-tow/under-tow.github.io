@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="undertow" />
+
+    <!--  统计鸟  -->
+  <script type="text/javascript" src="//api.tongjiniao.com/c?_=648949077803503616" async></script>
+
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  <meta name="description" content="description" />
+  
+  
+  
+  <title>
+    
+      Zookeeper 
+      
+      
+      |
+    
+     undertow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/dragon.png">
+    <link rel="icon" href="/images/dragon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.1.1"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/dragon.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">undertow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">Zookeeper</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2022-09-22 22:47:28
+        </span>
+        
+              <span class="post-tags">
+                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                
+                <span class="span--tag mr-8">
+                  <a href="/tags/Zookeeper/" title="Zookeeper">
+                    #Zookeeper
+                  </a>
+                </span>
+                
+              </span>
+          
+      </div>
+      <div class="markdown-body">
+        <h1 id="Zookeeper"><a href="#Zookeeper" class="headerlink" title="Zookeeper"></a>Zookeeper</h1><ol>
+<li>基于zk集群实现分布式配置中心</li>
+</ol>
+<h2 id="1-Zookeeper-是什么？"><a href="#1-Zookeeper-是什么？" class="headerlink" title="1. Zookeeper 是什么？"></a>1. Zookeeper 是什么？</h2><p>简单来说zookeeper&#x3D;<strong>文件系统 + 监听通知机制</strong>。</p>
+<h3 id="1-1-文件系统"><a href="#1-1-文件系统" class="headerlink" title="1.1 文件系统"></a>1.1 文件系统</h3><p>文件系统就是一个节点树，最头上的是根，</p>
+<p>再往下就有各级目录，每个目录中或者是文件或者是下一级的目录</p>
+<p><img src="https://hopestation.top/upload/2020/12/zk06-da25a3e62b294997bda9ed795302c1f9.png" alt="zk06.png"></p>
+<p>每个子目录项如 NameService 都被称作为 znode(目录节点)，</p>
+<p>和文件系统一样，我们能够自由的增加、删除znode，在一个znode下增加、删除子znode，</p>
+<p>唯一的不同在于znode是可以存储数据的</p>
+<blockquote>
+<p>需要额外注意以下几点：</p>
+<ol>
+<li><p>znode 中的数据可以有多个版本，在查询该 znode 数据时就需要带上版本信息。（set path version &#x2F; delete path version）</p>
+</li>
+<li><p>znode 可以是临时 znode（create -e 生成的节点），一旦创建这个 znode 的 client 与server 断开连接，该znode 将被自动删除。client 和 server 之间通过 heartbeat 来确认连接正常，这种状态称之为 session，断开连接后 session 失效。</p>
+</li>
+<li><p>临时 znode 不能有子 znode。</p>
+</li>
+<li><p>znode 可以自动编号（create -s 生成的节点），例如在 create -s &#x2F;app&#x2F;node 已存在时，将会生成&#x2F;app&#x2F;node00***001 节点。</p>
+</li>
+<li><p>znode 可以被监控，该目录下某些信息的修改，例如节点数据、子节点变化等，可以主动通知监控注册的 client。事实上，通过这个特性，可以完成许多重要应用，例如配置管理、信息同步、分布式锁等等。</p>
+</li>
+</ol>
+</blockquote>
+<h3 id="1-2-监听通知机制"><a href="#1-2-监听通知机制" class="headerlink" title="1.2 监听通知机制"></a>1.2 监听通知机制</h3><p>客户端注册监听它关心的目录节点，当目录节点发生变化（数据改变、被删除、子目录节点增加删除）时，zookeeper会通知客户端。</p>
+<p>zookeeper功能非常强大，可以实现诸如分布式应用配置管理、统一命名服务、状态同步服务、集群管理等功能，</p>
+<p>我们这里拿比较简单的分布式应用配置管理为例来说明。</p>
+<p>假设我们的程序是分布式部署在多台机器上，如果我们要改变程序的配置文件，</p>
+<p>需要逐台机器去修改，非常麻烦，现在把这些配置全部放到zookeeper上去，</p>
+<p>保存在 zookeeper 的某个目录节点中，然后所有相关应用程序对这个目录节点进行监听，</p>
+<p>一旦配置信息发生变化，每个应用程序就会收到 zookeeper 的通知，然后从 zookeeper 获取新的配置信息应用到系统中。</p>
+<p><img src="https://hopestation.top/upload/2020/12/zk07-1aa4ac271aaf4aa3936e487142a9de8b.png" alt="zk07.png"></p>
+<blockquote>
+<p>每个ZNode上可存储少量数据(默认是1M, 可以通过配置修改, 通常不建议在ZNode上存储大量的数据)</p>
+<p>配置文件文件大的话，个人建议不要用Zookeeper作为配置中心</p>
+</blockquote>
+<h3 id="1-3-概念"><a href="#1-3-概念" class="headerlink" title="1.3 概念"></a>1.3 概念</h3><p>先来看看官网的解释：</p>
+<p><img src="https://hopestation.top/upload/2020/12/zk05-a24b3b6c2e7d47bc813180a8c5b334bc.png" alt="zk05"></p>
+<p>关键信息：<strong>ZooKeeper是用于维护配置信息，命名，提供分布式同步以及提供组服务的集中式服务</strong>。</p>
+<p><strong>配置管理</strong></p>
+<p>在我们的应用中除了代码外，还有一些就是各种配置。比如数据库连接等。一般我们都是使用配置文件的方式，在代码中引入这些配置文件。但是当我们只有一种配置，只有一台服务器，并且不经常修改的时候，使用配置文件是一个很好的做法，但是如果我们配置非常多，有很多服务器都需要这个配置，而且还可能是动态的话使用配置文件就不是个好主意了。这个时候往往需要寻找一种集中管理配置的方法，我们在这个集中的地方修改了配置，所有对这个配置感兴趣的都可以获得变更。比如我们可以把配置放在数据库里，然后所有需要配置的服务都去这个数据库读取配置。但是，因为很多服务的正常运行都非常依赖这个配置，所以需要这个集中提供配置服务的服务具备很高的可靠性。一般我们可以用一个集群来提供这个配置服务，但是用集群提升可靠性，那如何保证配置在集群中的一致性呢？ 这个时候就需要使用一种实现了一致性协议的服务了。Zookeeper就是这种服务，它使用Zab这种一致性协议来提供一致性。现在有很多开源项目使用Zookeeper来维护配置，比如在HBase中，客户端就是连接一个Zookeeper，获得必要的HBase集群的配置信息，然后才可以进一步操作。还有在开源的消息队列Kafka中，也使用Zookeeper来维护broker的信息。在Alibaba开源的SOA框架Dubbo中也广泛的使用Zookeeper管理一些配置来实现服务治理。</p>
+<p><strong>名字服务</strong></p>
+<p>名字服务这个就很好理解了。比如为了通过网络访问一个系统，我们得知道对方的IP地址，但是IP地址对人非常不友好，这个时候我们就需要使用域名来访问。但是计算机是不能是别域名的。怎么办呢？如果我们每台机器里都备有一份域名到IP地址的映射，这个倒是能解决一部分问题，但是如果域名对应的IP发生变化了又该怎么办呢？于是我们有了DNS这个东西。我们只需要访问一个大家熟知的(known)的点，它就会告诉你这个域名对应的IP是什么。在我们的应用中也会存在很多这类问题，特别是在我们的服务特别多的时候，如果我们在本地保存服务的地址的时候将非常不方便，但是如果我们只需要访问一个大家都熟知的访问点，这里提供统一的入口，那么维护起来将方便得多了。</p>
+<p><strong>分布式锁</strong></p>
+<p>其实在第一篇文章中已经介绍了Zookeeper是一个分布式协调服务。这样我们就可以利用Zookeeper来协调多个分布式进程之间的活动。比如在一个分布式环境中，为了提高可靠性，我们的集群的每台服务器上都部署着同样的服务。但是，一件事情如果集群中的每个服务器都进行的话，那相互之间就要协调，编程起来将非常复杂。而如果我们只让一个服务进行操作，那又存在单点。通常还有一种做法就是使用分布式锁，在某个时刻只让一个服务去干活，当这台服务出问题的时候锁释放，立即fail over到另外的服务。这在很多分布式系统中都是这么做，这种设计有一个更好听的名字叫Leader Election(leader选举)。比如HBase的Master就是采用这种机制。但要注意的是分布式锁跟同一个进程的锁还是有区别的，所以使用的时候要比同一个进程里的锁更谨慎的使用。</p>
+<blockquote>
+<p>这段描述不够清晰，以后重新写一下</p>
+</blockquote>
+<p><strong>集群管理</strong></p>
+<p>在分布式的集群中，经常会由于各种原因，比如硬件故障，软件故障，网络问题，有些节点会进进出出。有新的节点加入进来，也有老的节点退出集群。这个时候，集群中其他机器需要感知到这种变化，然后根据这种变化做出对应的决策。比如我们是一个分布式存储系统，有一个中央控制节点负责存储的分配，当有新的存储进来的时候我们要根据现在集群目前的状态来分配存储节点。这个时候我们就需要动态感知到集群目前的状态。还有，比如一个分布式的SOA架构中，服务是一个集群提供的，当消费者访问某个服务时，就需要采用某种机制发现现在有哪些节点可以提供该服务(这也称之为服务发现，比如Alibaba开源的SOA框架Dubbo就采用了Zookeeper作为服务发现的底层机制)。还有开源的Kafka队列就采用了Zookeeper作为Cosnumer的上下线管理。</p>
+<blockquote>
+<p>更详细的描述参考此文章：<a target="_blank" rel="noopener" href="https://www.yuque.com/realskrman/bi4s0n/ho3b8b">https://www.yuque.com/realskrman/bi4s0n/ho3b8b</a></p>
+</blockquote>
+<h3 id="1-4-服务注册中心"><a href="#1-4-服务注册中心" class="headerlink" title="1.4 服务注册中心"></a>1.4 服务注册中心</h3><p>Zookeeper是可以作为服务注册中心的，经常和Dubbo来整合使用。</p>
+<p>除了Zookeeper，还有其他的注册中心：</p>
+<ul>
+<li>eureka：SpringCLoud项目产品</li>
+<li>nacos：阿里产品，springcloud-alibaba集成</li>
+<li>consul：HashiCorp 公司推出的开源工具</li>
+<li>等..</li>
+</ul>
+<h2 id="2-安装"><a href="#2-安装" class="headerlink" title="2. 安装"></a>2. 安装</h2><h3 id="2-1-单机测试"><a href="#2-1-单机测试" class="headerlink" title="2.1 单机测试"></a>2.1 单机测试</h3><h4 id="2-1-1-WIndow环境"><a href="#2-1-1-WIndow环境" class="headerlink" title="2.1.1 WIndow环境"></a>2.1.1 WIndow环境</h4><p>其实很简单，参考我的这个文章：<a target="_blank" rel="noopener" href="https://hopestation.top/archives/dz01#2-zookeeper%E5%AE%89%E8%A3%85">Dubbo + Zookeeper</a></p>
+<h4 id="2-1-2-Linux环境"><a href="#2-1-2-Linux环境" class="headerlink" title="2.1.2 Linux环境"></a>2.1.2 Linux环境</h4><p>1、下载 首先我们下载稳定版本的zookeeper<a target="_blank" rel="noopener" href="http://zookeeper.apache.org/releases.html"> http://zookeeper.apache.org/releases.html</a> </p>
+<p>2、上传 下载完成后，将zookee er压缩包<code>zookeeper-3.4.14.tar.gz</code>上传到linux系统 </p>
+<p>3、解压缩压缩包</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tar -zxvf zookeeper-3.4.14.tar.gz</span><br></pre></td></tr></table></figure>
+
+<p>4、进入<code>zookeeper-3.4.14</code>目录，创建data文件夹</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> zookeeper-3.4.14 <span class="built_in">mkdir</span> data</span><br></pre></td></tr></table></figure>
+
+<p>5、修改配置文件名称（因为Zookeeper默认读取的是 <code>zoo.cfg</code>文件）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> conf</span><br><span class="line"><span class="built_in">mv</span> zoo_sample.cfg zoo.cfg</span><br></pre></td></tr></table></figure>
+
+<p>5、修改<code>zoo.cfg</code>中的data属性</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dataDir=/root/zookeeper-3.4.14/data</span><br></pre></td></tr></table></figure>
+
+<p>6、zookeeper服务启动 进入bin目录，输入命令<strong>启动服务</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./zkServer.sh start</span><br></pre></td></tr></table></figure>
+
+<p>输出以下内容表示启动成功</p>
+<p><img src="https://hopestation.top/upload/2020/12/zk08-391e20c13c8540e4bd9efc2a476377af.png" alt="zk08.png"></p>
+<p>关闭服务输入命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./zkServer.sh stop</span><br></pre></td></tr></table></figure>
+
+<p>输出以下提示信息</p>
+<p><img src="https://hopestation.top/upload/2020/12/zk09-e703395dce084c40a6a3f2df245b5723.png" alt="zk09.png"></p>
+<p>查看状态</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./zkServer.sh status</span><br></pre></td></tr></table></figure>
+
+<p>如果启动状态，提示:</p>
+<p><img src="https://cdn.nlark.com/yuque/0/2020/png/1699668/1597134783727-8bee52ce-fd06-451b-ba63-252826dd92f5.png" alt="image.png"></p>
+<p>如果未启动状态，提示:</p>
+<p><img src="https://cdn.nlark.com/yuque/0/2020/png/1699668/1597134794690-99319724-8d68-415a-bc0c-b73bf0431a7d.png" alt="image.png"></p>
+<h3 id="2-2-伪集群模式"><a href="#2-2-伪集群模式" class="headerlink" title="2.2 伪集群模式"></a>2.2 伪集群模式</h3><p>这里介绍Linux搭建（WIndos也可以，步骤类似）</p>
+<blockquote>
+<p>首先来说并不太复杂，和我的<a target="_blank" rel="noopener" href="https://hopestation.top/archives/redis9">Redis的伪集群搭建</a>类似</p>
+<p>大致步骤：1.复制修改三份配置文件，2. 启动三份服务</p>
+<p>Zookeeper不但可以在单机上运行单机模式,Zookeeper,而且可以在单机模拟集群模式Zookee per的运行，也就是将不同实例运行在同一台机器，用端口进行区分，伪集群模式为我们体验Zookeeper和做一 些尝试性的实验提供了很大的便利。比如，我们在测试的时候，可以先使用少量数据在伪集群模式下进行测试。当测试可行的时候，再将数据移植到集群模式进行真实的数据实验。这样不但保证了它的可行 性，同时大大提高了实验的效率。这种搭建方式，比较简便，成本比较低，适合测试和学习 </p>
+</blockquote>
+<p>注意事项 : </p>
+<p>—台机器上部署了 3个server，也就是说单台机器及上运行多个Zookeeper实例。这种情况下，必须保 证每个配置文档的各个端口号不能冲突，除client Port不同之外，dataDir也不同。另外，还要在 dataDir所对应的目录中创建myid文件来指定对应的Zookee per服务器实例</p>
+<p>■ <strong>client Port 端口：</strong></p>
+<p>如果在1台机器上部署多个server，那么每台机器都要不同的client Port，比如serverl是2181,server2 是2182, server3是2183 </p>
+<p>■ <strong>dataDir 和 dataLogDir：</strong></p>
+<p>dataDi r和dataLogDir也需要区分下，将数据文件和日志文件分开存放，同时每个server的这两变量所 对应的路径都是不同的 </p>
+<p>■ <strong>server.X 和 yid：</strong></p>
+<p>server.X这个数字就是对应，data&#x2F;myid中的数字。在3个server的myid文件中分别写入了1, 2, 3,那 么每个serve r中的zoo.cfg都配server.1 server.2,server.3就行了。因为在同一台机器上，后面连着的2 个端口，3个server都不要一样，否则端口冲突</p>
+<p>下载 </p>
+<p>首先我们下载最新稳定版本的 zookee per<a target="_blank" rel="noopener" href="http://zookeeper.apache.org/releases.html"> htt p:&#x2F;&#x2F;zookee per.a pache.org&#x2F;releases.html</a> 上传 下载完成后，将zookee per压缩包zookee per-3.4.14.tar.gz上传到linux系统 解压压缩包 创建目录zkcluster</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mkdir zkcluster</span><br></pre></td></tr></table></figure>
+
+<p>解压zookee per-3・4・14・tar・gz到zkcluster目录下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tar -zxvf zookeeper-3.4.14.tar.gz -C /zkcluster</span><br></pre></td></tr></table></figure>
+
+<p>改变名称</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mv zookeeper-3.4.14 zookeeper01</span><br></pre></td></tr></table></figure>
+
+<p>复制并改名</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cp -r zookeeper01/ zookeeper02 cp -r zookeeper01/ zookeeper03</span><br></pre></td></tr></table></figure>
+
+<p>分别在zookeeper01、zookeeper02、zookeeper03目录下创建data及logs目录</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mkdir data</span><br><span class="line">cd data</span><br><span class="line">mkdir logs</span><br></pre></td></tr></table></figure>
+
+<p>修改配置文件名称</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd conf</span><br><span class="line">mv zoo_sample.cfg zoo.cfg</span><br></pre></td></tr></table></figure>
+
+<p>配置每一个 Zookee per 的 dataDir (zoo.cfg) client Port 分别为2181 2182 2183</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">clientPort=2181</span><br><span class="line">dataDir=/zkcluster/zookeeper01/data</span><br><span class="line">dataLogDir=/zkcluster/zookeeper01/data/logs</span><br><span class="line">clientPort=2182</span><br><span class="line">dataDir=/zkcluster/zookeeper02/data</span><br><span class="line">dataLogDir=/zkcluster/zookeeper02/data/logs</span><br><span class="line">clientPort=2183</span><br><span class="line">dataDir=/zkcluster/zookeeper03/data dataLogDir=/zkcluster/zookeeper03/data/logs</span><br></pre></td></tr></table></figure>
+
+<p>配置集群</p>
+<p>⑴ 在每个zookeeper的data目录下创建一个myid文件，内容分别是1、2、3。这个文件就是记录 每个服务器的ID</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">touch myid</span><br></pre></td></tr></table></figure>
+
+<p>(2) 在每一个zookeeper的zoo.cfg配置客户端访问端口(clientPort)和集群服务器IP列表。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">server.1=10.211.55.4:2881:3881</span><br><span class="line">server.2=10.211.55.4:2882:3882</span><br><span class="line">server.3=10.211.55.4:2883:3883</span><br></pre></td></tr></table></figure>
+
+<p># server.服务器ID&#x3D;服务器IP地址：服务器之间通信端口：服务器之间投票选举端口</p>
+<p>启动集群 依次启动三个zk实例</p>
+<p>节点状态查看</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">node1</span><br><span class="line"># ./zkServer.sh status</span><br><span class="line">ZooKeeper JMX enabled by default</span><br><span class="line">Using config: /app/zookeeper/bin/../conf/zoo.cfg</span><br><span class="line">Mode: follower</span><br><span class="line"></span><br><span class="line">#node2</span><br><span class="line"># ./zkServer.sh status</span><br><span class="line">ZooKeeper JMX enabled by default</span><br><span class="line">Using config: /app/zookeeper/bin/../conf/zoo.cfg</span><br><span class="line">Mode: leader</span><br><span class="line"></span><br><span class="line">#node3</span><br><span class="line"># ./zkServer.sh status</span><br><span class="line">ZooKeeper JMX enabled by default</span><br><span class="line">Using config: /app/zookeeper/bin/../conf/zoo.cfg</span><br><span class="line">Mode: follower</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-3-真集群模式"><a href="#2-3-真集群模式" class="headerlink" title="2.3 真集群模式"></a>2.3 真集群模式</h3><p>也就是相当于类似上面伪集群的操作。不过不是在一旦机器上配置三份。而是在三台服务器上配置三份。</p>
+<h2 id="3-配置文件"><a href="#3-配置文件" class="headerlink" title="3. 配置文件"></a>3. 配置文件</h2><p>上面的配置基本都是在 <code>zoo.cfg</code>，这里来解释一下配置文件的作用</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># cp conf/zoo_sample.cfg conf/zoo.cfg</span></span><br><span class="line"><span class="comment">#vim zoo.cfg</span></span><br><span class="line"><span class="comment"># zoo.cfg文件中内容如下</span></span><br><span class="line"><span class="comment"># The number of milliseconds of each tick</span></span><br><span class="line"><span class="comment">#Zookeeper 服务器之间或客户端与服务器之间维持心跳的时间间隔，每隔tickTime时间就会发送一个心跳，</span></span><br><span class="line"><span class="comment">#单位毫秒，最小的session过期时间为tickTime的两倍，ZK中的其他时间都是以这个为倍数的。</span></span><br><span class="line">tickTime=2000</span><br><span class="line"></span><br><span class="line"><span class="comment"># The number of ticks that the initial </span></span><br><span class="line"><span class="comment"># synchronization phase can take</span></span><br><span class="line"><span class="comment">#表示允许从服务器（相对于leader来说的客户端）连接到leader并完成数据同步的时间，</span></span><br><span class="line"><span class="comment">#它是以tickTime的倍数来表示的，也就是从服务器与主服务器完成初始化连接和数据同步是能够容忍多少个心跳时间，</span></span><br><span class="line"><span class="comment">#如果超过这个时间不能完成初始化连接的建立则表示连接失败。默认是10.</span></span><br><span class="line"><span class="comment">#如果你的数据量过大而且从服务器数量也多那么这个值可以设置大一点。</span></span><br><span class="line"><span class="comment">#总的时间长度就是 initLimit * tickTime 秒。</span></span><br><span class="line">initLimit=10  </span><br><span class="line"></span><br><span class="line"><span class="comment">#用于配置Leader服务器是否接受客户端的连接，是否允许Leader向客户端直接提供服务，默认是可以的。</span></span><br><span class="line"><span class="comment">#LeaderServes  </span></span><br><span class="line"></span><br><span class="line"><span class="comment"># The number of ticks that can pass between </span></span><br><span class="line"><span class="comment"># sending a request and getting an acknowledgement</span></span><br><span class="line"><span class="comment">#配置 Leader 与 Follower 之间发送消息，请求和应答时间长度，最长不能超过多少个 tickTime 的时间长度，</span></span><br><span class="line"><span class="comment">#总的时间长度就是 syncLimit * tickTime 秒 ，如果在这个时间内从服务器不能与主服务器通信，</span></span><br><span class="line"><span class="comment">#则表示该从服务器失败。默认为5.如果集群环境网络不佳可以调整大一点。</span></span><br><span class="line">syncLimit=5     </span><br><span class="line"></span><br><span class="line"><span class="comment"># the directory where the snapshot is stored.</span></span><br><span class="line"><span class="comment"># do not use /tmp for storage, /tmp here is just </span></span><br><span class="line"><span class="comment"># example sakes.</span></span><br><span class="line"><span class="comment">#Zookeeper 保存数据的数据库快照的位置，默认是/tmp/zookeeper，</span></span><br><span class="line"><span class="comment">#快照文件并不是实时的，运行一段时间才会有。</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#事务日志日志路径，若没提供的话则用dataDir。zookeeper的持久化都存储在这两个目录里，</span></span><br><span class="line"><span class="comment">#对ZK的读和写都是在内存中完成，所以速度非常快，但是如果停止ZK再启动数据还是需要保证的，</span></span><br><span class="line"><span class="comment">#所以就会有这样一个路径用来保存事务日志，当ZK再次启动时加载到内存重演过程来恢复数据。</span></span><br><span class="line"><span class="comment">#dataLogDir里是放到的顺序日志(WAL),指定的目录下有version-2文件夹（下有log.1文件），</span></span><br><span class="line"><span class="comment">#这个目录确定了当前事务日志的版本号，当下次某个版本的ZK对其进行修改时，版本号发生变化。</span></span><br><span class="line"><span class="comment">#日志文件大小为64M，如果数据比较多就会有多个这样大小的文件。而dataDir里放的是内存数据结构的snapshot，</span></span><br><span class="line"><span class="comment">#便于快速恢复。为了达到性能最大化，一般建议把dataDir和dataLogDir分到不同的磁盘上，</span></span><br><span class="line"><span class="comment">#建议将事物日志保存到单独的磁盘而且是高速磁盘。因为为了一致性，</span></span><br><span class="line"><span class="comment">#ZK对于客户端的写入请求在返回之前就要把本次操作写入到事物日志中</span></span><br><span class="line">dataDir=/app/zookeeper/data   </span><br><span class="line">dataLogDir=/app/zookeeper/logs  </span><br><span class="line"></span><br><span class="line"><span class="comment"># the port at which the clients will connect</span></span><br><span class="line"><span class="comment">#Zookeeper服务器监听的端口，以接受客户端的访问请求。</span></span><br><span class="line">clientPort=2181  </span><br><span class="line"></span><br><span class="line"><span class="comment"># the maximum number of client connections.</span></span><br><span class="line"><span class="comment"># increase this if you need to handle more clients</span></span><br><span class="line"><span class="comment">#限制连接到ZK上的客户端数量，并且限制并发连接数量，它通过IP来区分不同客户端。</span></span><br><span class="line"><span class="comment">#值为0表示不做任何限制。注意这里的限制是针对单台客户端到服务器的，并不是控制所有客户端连接的。默认60.</span></span><br><span class="line"><span class="comment">#maxClientCnxns=60   </span></span><br><span class="line"></span><br><span class="line">最小会话超时时间，默认为tickTime的2倍。不建议把这个值设置的比tickTime小。客户端连接到ZK时如果在这个最小时间内没有和ZK联系则标记为超时，也就是说会断开。</span><br><span class="line"><span class="comment">#minSessionTimeout=120     </span></span><br><span class="line"></span><br><span class="line">最大会话超时时间，默认为20倍的最小会话超时时间。不建议把这个值设置的比tickTime小。客户端连接到ZK时如果在这个最大时间内没有和ZK联系则标记为超时。所以上面的参数和这个参数组成了一个时间范围，也就是客户端连接ZK时如果在这个时间范围内没有成功连接则会标记为超时。如果客户端设置的时间范围不在这个服务器设置的范围内，则会被强制应用服务器设置的范围。</span><br><span class="line"><span class="comment">#maxSessionTimeout=2400     </span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Be sure to read the maintenance section of the </span></span><br><span class="line"><span class="comment"># administrator guide before turning on autopurge.</span></span><br><span class="line"><span class="comment"># http://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_maintenance</span></span><br><span class="line"><span class="comment"># The number of snapshots to retain in dataDir</span></span><br><span class="line"><span class="comment">#自动清理日志，该参数设置保留多少个快照文件和对应的事务日志文件，默认为3，</span></span><br><span class="line"><span class="comment">#如果你设置的小于3则会被自动的调整为3</span></span><br><span class="line"><span class="comment">#autopurge.snapRetainCount=3              </span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Purge task interval in hours</span></span><br><span class="line"><span class="comment"># Set to &quot;0&quot; to disable auto purge feature</span></span><br><span class="line"><span class="comment">#自动清理日志，该参数设置自动清理频率，上面的参数配套使用。</span></span><br><span class="line"><span class="comment">#客户端在和ZK服务器交互中服务器会产生很多日志，而且ZK会将内存中的数据作为快照保存起来，</span></span><br><span class="line"><span class="comment">#而且这些数据不会自动删除，那么磁盘空间就会被占用，可以设置这2个参数来自动清理，</span></span><br><span class="line"><span class="comment">#不过如果ZK服务器比较繁忙而且赶上删除日志任务就会影响性能，所以一般不设置这个自动清理，</span></span><br><span class="line"><span class="comment">#而是在ZK访问量少的时候通过Linux的定时任务来处理。0表示不开启自动清理功能。</span></span><br><span class="line"><span class="comment">#autopurge.purgeInterval=1  </span></span><br><span class="line"></span><br><span class="line"><span class="comment">#ZK的最大请求堆积数，客户端请求比较多，为了防止客户端资源过度消耗，服务器必须限制同时处理的请求数量。</span></span><br><span class="line"><span class="comment">#globalOutstandingLimit   </span></span><br><span class="line"></span><br><span class="line"><span class="comment">#用于配置ZK事务日志预先分配的空间，默认是64M</span></span><br><span class="line"><span class="comment">#preAllocSize   </span></span><br><span class="line"></span><br><span class="line"><span class="comment">#用于配置相邻两次快照之间的事物日志次数，默认是10万。也就是10万条事务之后做一次快照同时结转事务日志</span></span><br><span class="line"><span class="comment">#snapCount     </span></span><br><span class="line"></span><br><span class="line"><span class="comment">#这个参数针对多网卡的ZK服务器，允许为每个IP地址指定不同的监听端口。</span></span><br><span class="line"><span class="comment">#clientPortAddres     </span></span><br><span class="line"></span><br><span class="line"><span class="comment">#用于设置ZK服务器事物日志同步操作时消耗时间的报警阈值，如果实际消耗时长超过这个时间日志就会记录。</span></span><br><span class="line"><span class="comment">#fsync.warningthresholdms     </span></span><br><span class="line"></span><br><span class="line"><span class="comment">#用于配置Leader选举算法，目前只有一种选举算法，所以不用配置。</span></span><br><span class="line"><span class="comment">#electionAlg    </span></span><br><span class="line"></span><br><span class="line"><span class="comment">#用于Leader选举时各个服务器之间进行的TCP连接创建超时时间，默认为5.</span></span><br><span class="line"><span class="comment">#cnxTimeout  </span></span><br><span class="line"></span><br><span class="line"><span class="comment">#这个参数用于配置ZK服务器是否在事物提交时是否强制写入磁盘（LINUX的延迟写入），默认是YES。</span></span><br><span class="line"><span class="comment">#forceSync       </span></span><br><span class="line"></span><br><span class="line"><span class="comment">#用于配置单个数据节点上最大数量，默认是1MB。通常不需要改动该参数，但是因为Zookeeper不适合存放太多数据所以有时候需要把值改小</span></span><br><span class="line"><span class="comment">#jute.maxbuffer    </span></span><br><span class="line"></span><br><span class="line"><span class="comment">#是否跳过ACL检查，默认是no，也就是会对所有客户端连接进行acl检查。</span></span><br><span class="line"><span class="comment">#skipACL    </span></span><br><span class="line"></span><br><span class="line"><span class="comment">#其中X是一个数字, 表示这是第几号server，它的值和myid文件中的值对应。</span></span><br><span class="line"><span class="comment">#A是该server所在的IP地址。B是配置该server和集群中的leader交换消息所使用的端口。</span></span><br><span class="line"><span class="comment">#C配置选举leader时所使用的端口。由于配置的是伪集群模式，所以各个server的B, C参数必须不同，</span></span><br><span class="line"><span class="comment">#如果是真正分布式集群，那么B和C在各个节点上可以相同，</span></span><br><span class="line"><span class="comment">#因为即使相同由于节点处于不同的服务器也不会导致端口冲突。</span></span><br><span class="line"><span class="comment">#格式server.X=A:B:C</span></span><br><span class="line">server.1=10.55.2.81:2888:3888</span><br><span class="line">server.2=10.55.2.82:2888:3888</span><br><span class="line">server.3=10.55.2.83:2888:3888</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="4-系统模型"><a href="#4-系统模型" class="headerlink" title="4. 系统模型"></a>4. 系统模型</h2><p>ZooKee per 数据模型 Znode 在ZooKeeper中，数据信息被保存在一个个数据节点上，这些节点被称为znode。ZNode是Zookee per中最小数据单位，在ZNode下面又可以再挂ZNode，这样一层层下去就形成了一个层次化 命名空间ZNode树，我们称为ZNode Tree，它采用了类似文件系统的层级树状结构进行管理。见下图 示例：</p>
+<p><img src="https://hopestation.top/upload/2020/12/zk12-76e9a131a4e74f609709b4ff6341efab.png" alt="zk12.png"></p>
+<p>在Zookeeper中，每一个数据节点都是一个ZNode,上图根目录下有两个节点，分别是；app1和 app2,其中app1下面又有三个子节点，所有ZNode按层次化进行组织，形成这么一颗树，ZNode的节 点路径标识方式和Unix文件系统路径非常相似，都是由一系列使用斜杠(&#x2F;)进行分割的路径表示，开 发人员可以向这个节点写入数据，也可以在这个节点下面创建子节点。</p>
+<h3 id="4-1-ZNode类型"><a href="#4-1-ZNode类型" class="headerlink" title="4.1 ZNode类型"></a>4.1 ZNode类型</h3><p>刚刚已经了解到，Zookeeper的znode tree是由一系列数据节点组成的，那接下来，我们就对数据节点 做详细讲解</p>
+<p>Zookee per节点类型可以分为三大类:</p>
+<ul>
+<li>持久性节点(Persistent）</li>
+<li>临时性节点（Ephemeral）</li>
+<li>顺序性节点（Sequential)）</li>
+</ul>
+<p>在开发中在创建节点的时候通过组合可以生成以下四种节点类型：持久节点、持久顺序节点、临时节 点、临时顺序节点。不同类型的节点则会有不同的生命周期 </p>
+<p><strong>持久节点：</strong></p>
+<p>是Zookeeper中最常见的一种节点类型，所谓持久节点，就是指节点被创建后会一直存在服 务器，直到删除操作主动清除 </p>
+<p><strong>持久顺序节点：</strong></p>
+<p>就是有顺序的持久节点，节点特性和持久节点是一样的，只是额外特性表现在顺序上。 顺序特性实质是在创建节点的时候，会在节点名后面加上一个数字后缀，来表示其顺序。</p>
+<p><strong>临时节点：</strong></p>
+<p>就是会被自动清理掉的节点，它的生命周期和客户端会话绑在一起，客户端会话结束，节点会被删除掉。与持久性节点不同的是，<strong>临时节点不能创建子节点</strong>。</p>
+<p><strong>临时顺序节点</strong></p>
+<p>就是有顺序的临时节点，和持久顺序节点相同，在其创建的时候会在名字后面加上数字 后缀。</p>
+<p><strong>事务ID</strong> </p>
+<p>首先，先了解，事务是对物理和抽象的应用状态上的操作集合。往往在现在的概念中，狭义上的事务通 常指的是数据库事务，一般包含了一系列对数据库有序的读写操作，这些数据库事务具有所谓的ACID特 性，即原子性(Atomic)、一致性(Consistency)、隔离性(Isolation)和持久性(Durability)。</p>
+<p>而在ZooKeeper中，事务是指能够改变ZooKeeper服务器状态的操作，我们也称之为事务操作或更新操作，一般包括数据节点创建与删除、数据节点内容更新等操作。对于每一个事务请求，ZooKeeper都会 为其分配一个全局唯一的事务ID，用 **ZXID **来表示，通常是一个64位的数字。每一个ZXID对应一次更新操作，从这些ZXID中可以间接地识别出ZooKeeper处理这些更新操作请求的全局顺序</p>
+<h3 id="4-2-ZNode的状态信息"><a href="#4-2-ZNode的状态信息" class="headerlink" title="4.2 ZNode的状态信息"></a>4.2 ZNode的状态信息</h3><p>我先来写几个命令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#根目录的所有节点</span></span><br><span class="line">[zk: localhost:2181(CONNECTED) 5] <span class="built_in">ls</span> /</span><br><span class="line">[dubbo, <span class="built_in">test</span>, zookeeper]</span><br><span class="line"></span><br><span class="line"><span class="comment"># get 命令 来获取节点内容</span></span><br><span class="line">[zk: localhost:2181(CONNECTED) 6] get /test</span><br><span class="line">hope666</span><br><span class="line"></span><br><span class="line"><span class="comment"># stat 命令 来获取节点状态信息</span></span><br><span class="line">[zk: localhost:2181(CONNECTED) 4] <span class="built_in">stat</span> /test</span><br><span class="line">cZxid = 0x5d</span><br><span class="line">ctime = Wed Dec 09 13:46:38 GMT+08:00 2020</span><br><span class="line">mZxid = 0x5e</span><br><span class="line">mtime = Wed Dec 09 13:47:01 GMT+08:00 2020</span><br><span class="line">pZxid = 0x61</span><br><span class="line">cversion = 2</span><br><span class="line">dataVersion = 1</span><br><span class="line">aclVersion = 0</span><br><span class="line">ephemeralOwner = 0x0</span><br><span class="line">dataLength = 7</span><br><span class="line">numChildren = 0</span><br></pre></td></tr></table></figure>
+
+
+
+<p>整个ZNode节点内容包括两部分：节点数据内容和节点状态信息。那么这些状态信息都有什么含义呢？</p>
+<ul>
+<li>cZxid Create ZXID：表示节点被创建时的事务ID</li>
+<li>ctime Create Time：表示节点创建时间。</li>
+<li>mZxid Modified ZXID：表示节点最后一次被修改时的事务ID。</li>
+<li>mtime Modified Time：表示节点最后一次被修改的时间。</li>
+<li>pZxid：表示该节点的子节点列表最后一次被修改时的事务ID。只有子节点列表变更才会更新pZxid,子节点内容变更不会更新。</li>
+<li>eversion：表示子节点的版本号。</li>
+<li>dataVersion： 表不内容版本号。</li>
+<li>aclVersion： 标识 acl 版本</li>
+<li>ephemeralOwner：表示创建该临时节点时的会话sessionID，如果是持久性节点那么值为0 dataLength表示数据长度。</li>
+<li>numchildren：表示直系子节点数。</li>
+</ul>
+<h3 id="4-3-Watcher"><a href="#4-3-Watcher" class="headerlink" title="4.3 Watcher"></a>4.3 Watcher</h3><p><strong>Watcher 数据变更通知</strong></p>
+<p>Zookeeper使用Watcher机制实现分布式数据的发布&#x2F;订阅功能 —个典型的发布&#x2F;订阅模型系统定义了一种一对多的订阅关系，能够让多个订阅者同时监听某一个主题 对象，当这个主题对象自身状态变化时，会通知所有订阅者，使它们能够做出相应的处理。</p>
+<p>在ZooKeeper中，引入了 Watcher机制来实现这种分布式的通知功能。ZooKeeper允许客户端向服务 端注册一个Watcher监听，当服务端的一些指定事件触发了这个Watche r,那么就会向指定客户端发 送一个事件通知来实现分布式的通知功能。</p>
+<p>整个Watcher注册与通知过程如图所示。</p>
+<p><img src="https://hopestation.top/upload/2020/12/zk13-678eeb5b950741898fb530c7532372a0.png" alt="zk13.png"></p>
+<p>Zookeeper的Watcher机制主要包括客户端线程、客户端WatcherManager、Zookeeper服务器三部 分。</p>
+<p>具体工作流程为：客户端在向Zookee per服务器注册的同时，会将Watcher对象存储在客户端的 WatcherManager当中。当Zookeeper服务器触发Watcher事件后，会向客户端发送通知，客户端线程 从WatcherManager中取出对应的Watcher对象来执行回调逻辑。</p>
+<blockquote>
+<p>这种监听机制，把压力分散在了每一个服务器上，去监听这个zookeeper中心。监听数据变化</p>
+</blockquote>
+<h3 id="4-4-ACL"><a href="#4-4-ACL" class="headerlink" title="4.4 ACL"></a>4.4 ACL</h3><p><strong>ACL–保障数据的安全</strong></p>
+<p>Zookee per作为一个分布式协调框架，其内部存储了分布式系统运行时状态的元数据，这些元数据会直 接影响基于Zookee per进行构造的分布式系统的运行状态，因此，如何保障系统中数据的安全，从而避 免因误操作所带来的数据随意变更而导致的数据库异常十分重要，在Zookee per中，提供了一套完善的 ACL (Access Control List)权限控制机制来保障数据的安全。</p>
+<p>我们可以从三个方面来理解ACL机制：**权限模式(Scheme)、授权对象(ID)、权限 (Permission)，通常使用<code>scheme: id : permission</code>**来标识一个有效的ACL信息。</p>
+<p><strong>权限模式：Scheme</strong></p>
+<p><strong>权限模式</strong>用来确定权限验证过程中使用的检验策略，有如下四种模式:</p>
+<p><strong>ip</strong></p>
+<p>IP模式就是通过IP地址粒度来进行权限控制，如”i p：192.168.0.110”表示权限控制针对该IP地址， 同时IP模式可以支持按照网段方式进行配置，如”ip ：192.168.0.1&#x2F;24”表示针对192.168.0.*这个网段 进行权限控制。</p>
+<p><strong>Digest</strong></p>
+<p>Digest是最常用的权限控制模式，要更符合我们对权限控制的认识，其使</p>
+<p>用”username: password”形式的权限标识来进行权限配置，便于区分不同应用来进行权限控制。</p>
+<p>当我们通过”username:password”形式配置了权限标识后，Zookeeper会先后对其进行SHA-1加密 和BASE64编码。</p>
+<p><strong>World</strong></p>
+<p>World是一种最开放的权限控制模式，这种权限控制方式几乎没有任何作用，数据节点的访问权限 对所有用户开放，即所有用户都可以在不进行任何权限校验的情况下操作ZooKee per上的数据。 另外，World模式也可以看作是一种特殊的Digest模式，它只有一个权限标识，即”world： anyone”。</p>
+<p><strong>Super</strong></p>
+<p>Super模式，顾名思义就是超级用户的意思，也是一种特殊的Digest模式。在Super模式下，超级 用户可以对任意ZooKee per上的数据节点进行任何操作。</p>
+<p><strong>授权对象：ID</strong></p>
+<p>授权对象指的是权限赋予的用户或一个指定实体，例如IP地址或是机器等。在不同的权限模式下，授 权对象是不同的，表中列出了各个权限模式和授权对象之间的对应关系。</p>
+<p><img src="https://hopestation.top/upload/2020/12/zk14-a5eff3d3afb54e9c985a9fdba4733865.png" alt="zk14.png"></p>
+<p><strong>权限</strong></p>
+<p> 权限就是指那些通过权限检查后可以被允许执行的操作。在ZooKee per中，所有对数据的操作权限分为 以下五大类： </p>
+<ul>
+<li><p>CREATE (C)：数据节点的创建权限，允许授权对象在该数据节点下创建子节点。</p>
+</li>
+<li><p>DELETE (D)： 子节点的删除权限，允许授权对象删除该数据节点的子节点。</p>
+</li>
+<li><p>READ (R):数据节点的读取权限，允 许授权对象访问该数据节点并读取其数据内容或子节点列表等。</p>
+</li>
+<li><p>WRITE (W):数据节点的更新权 限，允许授权对象对该数据节点进行更新操作。</p>
+</li>
+<li><p>ADMIN (A):数据节点的管理权限，允许授权对象 对该数据节点进行ACL相关的设置操作。</p>
+</li>
+</ul>
+<h2 id="5-命令"><a href="#5-命令" class="headerlink" title="5. 命令"></a>5. 命令</h2><p>现在已经搭建起了一个能够正常运行的zookee per服务了，所以接下来，就是来借助客户端来对 zookee per的数据节点进行操作 首先，进入到zookee per的bin目录之后 通过zkClient进入zookee per客户端命令行</p>
+<p>.&#x2F;zkcli.sh 连接本地的zookee per服务器</p>
+<p>.&#x2F;zkCli.sh -server ip:p ort连接指定的服务器</p>
+<p>连接成功之后，系统会输出Zookee per的相关环境及配置信息等信息。输入hel p之后，屏幕会输出可用 的Zookeeper命令，如下图所示</p>
+<p><strong>1、创建节点</strong> </p>
+<p>使用Create命令，可以•创建一个Zookee per节点，如</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create [-s][-e] path data acl</span><br></pre></td></tr></table></figure>
+
+<p>其中，-s或-e分别指定节点特性，顺序或临时节点，若不指定，则创建持久节点；acl用来进行权限控制。</p>
+<p><strong>2、创建顺序节点</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create -s /zk-test 123</span><br></pre></td></tr></table></figure>
+
+<p>执行完后，就在根节点下创建了一个叫做&#x2F;zk-test的节点，该节点内容就是123，同时可以看到创建的 zk-test节点后面添加了一串数字以示区别</p>
+<p><strong>3、创建临时节点</strong></p>
+<p>使用create -e &#x2F;zk-temp 123命令创建zk-te mp临时节</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create -e /zk-temp 123</span><br></pre></td></tr></table></figure>
+
+<p>临时节点在客户端会话结束后，就会自动删除，下面使用****quit****命令退出客户端</p>
+<p>再次使用客户端连接服务端，并使用ls &#x2F;命令查看根目录下的节点</p>
+<p>可以看到根目录下已经不存在zk-tem P临时节点了</p>
+<p><strong>4、创建永久节点</strong></p>
+<p>使用 <strong>create &#x2F;zk-p ermanent 123</strong> 命令创建 zk- permanent 永久节点</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create /zk-permanent 123</span><br></pre></td></tr></table></figure>
+
+<p>可以看到永久节点不同于顺序节点，不会自动在后面添加一串数字</p>
+<p><strong>5、读取节点</strong> </p>
+<p>与读取相关的命令有ls命令和get命令 ls命令可以列出Zookee per指定节点下的所有子节点，但只能查看指定节点下的第一级的所有子节点;</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ls path</span><br></pre></td></tr></table></figure>
+
+<p>其中，path表示的是指定数据节点的节点路径 get命令可以获取Zookee per指定节点的数据内容和属性信息。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">get path</span><br></pre></td></tr></table></figure>
+
+<p>若获取根节点下面的所有子节点，使用<em><strong>*ls*</strong></em> ****&#x2F;****命令即可</p>
+<p>若想获取&#x2F;zk-permanent的数据内容和属性，可使用如下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">get /zk-permanent</span><br></pre></td></tr></table></figure>
+
+<p>我们可以看到，第一行是节点&#x2F;zk-permanent的数据内容，其他几行则是创建该 节点的事务ID (cZxid)、最后一次更新该节点的事务ID (mZxid)和最后一次更新该节点的时间(mtime)等属性信息</p>
+<p><strong>6、更新节点</strong></p>
+<p> 使用set命令，可以更新指定节点的数据内容，用法如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set path data [version]</span><br></pre></td></tr></table></figure>
+
+<p>其中，data就是要更新的新内容，version表示数据版本，在zookeeper中，节点的数据是有版本概 念的，这个参数用于指定本次更新操作是基于Znode的哪一个数据版本进行的，如将&#x2F;zk-P ermanent节 点的数据更新为456,可以使用如下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set /zk-permanent 456</span><br></pre></td></tr></table></figure>
+
+<p>现在dataVersion已经变为1 了，表示进行了更新</p>
+<p><strong>7、删除节点</strong></p>
+<p>使用delete命令可以删除Zookee per上的指定节点，用法如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">delete path [version]</span><br></pre></td></tr></table></figure>
+
+<p>其中version也是表示数据版本，使用<strong>delete &#x2F;zk- permanent</strong>命令即可删除&#x2F;zk-p ermanent节点</p>
+<p>值得注意的是，<strong>若删除节点存在子节点，那么无法删除 该节点，必须先删除子节点，再删除父节点</strong></p>
+<h2 id="6-API"><a href="#6-API" class="headerlink" title="6. API"></a>6. API</h2><p>也就是通过JAVA来操作我们的Zookeeper，而不是直接通过Zookeeper客户端的命令行。</p>
+<p>可以参考这篇文章：<a target="_blank" rel="noopener" href="https://www.yuque.com/realskrman/bi4s0n/sf8hyq#VvaWB">https://www.yuque.com/realskrman/bi4s0n/sf8hyq#VvaWB</a></p>
+<h2 id="7-服务器角色"><a href="#7-服务器角色" class="headerlink" title="7. 服务器角色"></a>7. 服务器角色</h2><h3 id="Leader"><a href="#Leader" class="headerlink" title="Leader"></a>Leader</h3><p>Leader服务器是Zookee per集群工作的核心，其主要工作有以下两个:</p>
+<p>(1) 事务请求的唯一调度和处理者，保证集群事务处理的顺序性。</p>
+<p>(2) 集群内部各服务器的调度者。</p>
+<p>\1. 请求处理链</p>
+<p>使用责任链来处理每个客户端的请求是Zookeeper的特色，Leader服务器的请求处理链如下:</p>
+<p><img src="https://hopestation.top/upload/2020/12/zk15-9c0facaf2e564ce9a573eb23b41c805f.png" alt="zk15.png"></p>
+<p>可以看到，从 P re pRequest Processor 到 FinalRequest Processor 前后一共 7个请求处理器组成 了 leader 服务器的请求处理链</p>
+<p>(1) Prep Request Processor。请求预处理器，也是leader服务器中的第一个请求处理器。在Zookee per 中，那些会改变服务器状态的请求称为事务请求(创建节点、更新数据、删除节点、创建会话等)， Prep Request Process。r能够识别出当前客户端请求是否是事务请求。对于事务请求，</p>
+<p>PrepRequestProcess。r处理器会对其进行一系列预处理，如创建请求事务头、事务体、会话检查、ACL 检查和版本检查等。</p>
+<p>(2) ProposalRequestProcessor。事务投票处理器。也是Leader服务器事务处理流程的发起者，对 于非事务性请求，Propo salRequest Process。r会直接将请求转发到Commit Processor处理器，不再做 任何处理，而对于事务性请求，处理将请求转发到Commit Processor外，还会根据请求类型创建对应的 Pro po sal提议，并发送绐所有的Follower服务器来发起一次集群内的事务投票。同时， Propo salRequest Processor还会将事务请求交付绐SyncRequest Processor进行事务日志的记录。</p>
+<p>(3) SyncRequest Processor。事务日志记录处理器。用来将事务请求记录到事务日志文件中，同时 会触发Zookee per进行数据快照。</p>
+<p>(4) AckRequestProcessor。负责在SyncRequestProcessor完成事务日志记录后，向Proposal的投 票收集器发送ACK反馈，以通知投票收集器当前服务器已经完成了对该Proposal的事务日志记录。</p>
+<p>(5) Commit Processor。事务提交处理器。对于非事务请求，该处理器会直接将其交付绐下一级处 理器处理；对于事务请求，其会等待集群内针对Prop osa l的投票直到该Prop osal可被提交，利用 Commit Processor，每个服务器都可以很好地控制对事务请求的顺序处理。</p>
+<p>(6) ToBeCommit Processor。该处理器有一个toBeA pp lied队列，用来存储那些已经被</p>
+<p>Commit Processor处理过的可被提交的P ro posal。其会将这些请求交付绐FinalRequest Processor处理 器处理，待其处理完后，再将其从toBeA PP lied队列中移除。</p>
+<p>(7) FinalRequest Processor。用来进行客户端请求返回之前的操作，包括创建客户端请求的响应, 针对事务请求，该处理器还会负责将事务应用到内存数据库中。</p>
+<h3 id="Follower"><a href="#Follower" class="headerlink" title="Follower"></a>Follower</h3><p>Follower服务器是Zookee per集群状态中的跟随者，其主要工作有以下三个:</p>
+<p>(1)处理客户端非事务性请求(读取数据)，转发事务请求绐Leader服务器。</p>
+<p>(1) 参与事务请求P ro po sa l的投票。</p>
+<p>(2) 参与Leader选举投票。</p>
+<p>和leader—样，Follower也采用了责任链模式组装的请求处理链来处理每一个客户端请求，由于不 需要对事务请求的投票处理，因此Follower的请求处理链会相对简单，其处理链如下</p>
+<p><img src="https://hopestation.top/upload/2020/12/zk16-ec01902ec9ec480fa590415a9f2668b7.png" alt="zk16.png"></p>
+<p>和Leader服务器的请求处理链最大的不同点在于，Follower服务器的第一个处理器换成了 FollowerRequest Processor处理器，同时由于不需要处理事务请求的投票，因此也没有了 P ro po salRequest Processor 处理器。</p>
+<p>  (1) FollowerRequestProcessor 其用作识别当前请求是否是事务请求，若是，那么Follower就会将该请求转发绐Leader服务器， Leader服务器在接收到这个事务请求后，就会将其提交到请求处理链，按照正常事务请求进行处理。</p>
+<p>(2) SendAckRequestProcessor 其承担了事务日志记录反馈的角色，在完成事务日志记录后，会向Leader服务器发送ACK消息以表明自 身完成了事务日志的记录工作</p>
+<h3 id="Observer"><a href="#Observer" class="headerlink" title="Observer"></a>Observer</h3><p>Observer是ZooKee per自3.3.0版本开始引入的一个全新的服务器角色。从字面意思看，该服务器充当 了一个观察者的角色其观察ZooKee per集群的最新状态变化并将这些状态变更同步过来。</p>
+<p>Observer服务器在工作原理上和Follower基本是一致的，对于非事务请求，都可以进行独立的处理，而 对于事务请求，则会转发绐Leader服务器进行处理。和Follower唯一的区别在于，Observer不参与任 何形式的投票，包括事务请求Proposal的投票和Leader选举投票。简单地讲，Observer服务器只提供 非事务服务，通常用于在不影响集群事务处理能力的前提下提升集群的非事务处理能力。</p>
+<p>另外，Observer的请求处理链路和Follower服务器也非常相近,其处理链如下</p>
+<p><img src="https://hopestation.top/upload/2020/12/zk17-7c563f2e61be41219cd7fefea85d7e62.png" alt="zk17.png"></p>
+<p>另外需要注意的一点是，虽然在图中可以看到，Observer服务器在初始化阶段会将</p>
+<p>SyncRequestProcess。r处理器也组装上去，但是在实际运行过程中，Leader服务器不会将事务请求的 投票发送绐Observer服务器。</p>
+<h2 id="8-选举机制"><a href="#8-选举机制" class="headerlink" title="8. 选举机制"></a>8. 选举机制</h2><p><strong>1.初始化Leader选举。</strong></p>
+<p>集群模式特有，Zookeeper首先会根据自身的服务器ID(SID)、最新的</p>
+<p>ZXID (lastLoggedZxid)和当前的服务器epoch (currentEpoch)来生成一个初始化投票，在 初始化过程中，每个服务器都会给自己投票。然后，根据zoo.cfg的配置，创建相应Leader选举算法 实现，Zookeeper提供了三种默认算法(LeaderElection、AuthFastLeaderElection、 FastLeaderElection),可通过zoo.cfg中的electionAlg属性来指定，但现只支持 FastLeaderElection选举算法。在初始化阶段，Zookeeper会创建Leader选举所需的网络I&#x2F;O层 QuorumCnxManager,同时启动对Leader选举端口的监听，等待集群中其他服务器创建连接。</p>
+<p><strong>2.注册JMX服务。</strong></p>
+<p><strong>3</strong> <strong>检测当前服务器状态</strong></p>
+<p>运行期间，Quorum Peer会不断检测当前服务器状态。在正常情况下，Zookee per服务器的状态 在 LOOKING、LEADING、FOLLOWING&#x2F;OBSERVING 之间进行切换。在启动阶段，Quorum Peer 的初始 状态是LOOKING,因此开始进行Leader选举。</p>
+<p><strong>4. Leader 选举</strong></p>
+<p>ZooKee per的Leader选举过程，简单地讲，就是一个集群中所有的机器相互之间进行一系列投 票，选举产生最合适的机器成为Leader,同时其余机器成为Follower或是Observer的集群机器角 色初始化过程。关于Leader选举算法，简而言之，就是集群中哪个机器处理的数据越新(通常我们根 据每个服务器处理过的最大ZXID来比较确定其数据是否更新)，其越有可能成为Leader。当然，如 果集群中的所有机器处理的ZXID—致的话，那么SID最大的服务器成为Leader，其余机器称为 Follower 和 Observer</p>
+<h2 id="9-参考文献"><a href="#9-参考文献" class="headerlink" title="9 参考文献"></a>9 参考文献</h2><ul>
+<li><p><a target="_blank" rel="noopener" href="https://www.yuque.com/realskrman/bi4s0n/wrbzgy">https://www.yuque.com/realskrman/bi4s0n/wrbzgy</a> (☆☆☆☆☆)<br>语雀 比较详细 （本文大部分参考了此本章）</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/ultranms/p/9585191.html">https://www.cnblogs.com/ultranms/p/9585191.html</a>  (☆☆☆) 比较详细，目前理解有点难</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/mindzone/p/13448950.html">https://www.cnblogs.com/mindzone/p/13448950.html</a>  (☆☆) 比较基础简洁</p>
+</li>
+</ul>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2020/12/08/Dubbo%20+%20Zookeeper-dubbozookeeper/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2022-09-22 22:47:28
+            </span>
+            
+                  <span class="post-tags">
+                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
+                    
+                    <span class="span--tag mr-8">
+                      <a href="/tags/Zookeeper/" title="Zookeeper">
+                        #Zookeeper
+                      </a>
+                    </span>
+                    
+                  </span>
+              
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2020/12/19/@RequestMapping%E7%9A%84produces%20%E5%8F%82%E6%95%B0-requestmapping%E7%9A%84produces%E5%8F%82%E6%95%B0/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Zookeeper"><span class="toc-text">Zookeeper</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Zookeeper-%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="toc-text">1. Zookeeper 是什么？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F"><span class="toc-text">1.1 文件系统</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-%E7%9B%91%E5%90%AC%E9%80%9A%E7%9F%A5%E6%9C%BA%E5%88%B6"><span class="toc-text">1.2 监听通知机制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3-%E6%A6%82%E5%BF%B5"><span class="toc-text">1.3 概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-4-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83"><span class="toc-text">1.4 服务注册中心</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%AE%89%E8%A3%85"><span class="toc-text">2. 安装</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E5%8D%95%E6%9C%BA%E6%B5%8B%E8%AF%95"><span class="toc-text">2.1 单机测试</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1-1-WIndow%E7%8E%AF%E5%A2%83"><span class="toc-text">2.1.1 WIndow环境</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1-2-Linux%E7%8E%AF%E5%A2%83"><span class="toc-text">2.1.2 Linux环境</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E4%BC%AA%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F"><span class="toc-text">2.2 伪集群模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-%E7%9C%9F%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F"><span class="toc-text">2.3 真集群模式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-text">3. 配置文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E7%B3%BB%E7%BB%9F%E6%A8%A1%E5%9E%8B"><span class="toc-text">4. 系统模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-ZNode%E7%B1%BB%E5%9E%8B"><span class="toc-text">4.1 ZNode类型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-ZNode%E7%9A%84%E7%8A%B6%E6%80%81%E4%BF%A1%E6%81%AF"><span class="toc-text">4.2 ZNode的状态信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-Watcher"><span class="toc-text">4.3 Watcher</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-ACL"><span class="toc-text">4.4 ACL</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%91%BD%E4%BB%A4"><span class="toc-text">5. 命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-API"><span class="toc-text">6. API</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%A7%92%E8%89%B2"><span class="toc-text">7. 服务器角色</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Leader"><span class="toc-text">Leader</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Follower"><span class="toc-text">Follower</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Observer"><span class="toc-text">Observer</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E9%80%89%E4%B8%BE%E6%9C%BA%E5%88%B6"><span class="toc-text">8. 选举机制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="toc-text">9 参考文献</span></a></li></ol></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/under-tow">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/under-tow">Copyright © 2024 undertow</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+  <div class="footer-views">
+      <span id="busuanzi_container_site_pv" style='display:none'>
+          共<span id="busuanzi_value_site_uv"></span>位伙伴访问了本站<span id="busuanzi_value_site_pv"></span>次
+      </span>
+  <div>
+</div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + Zookeeper + '&url=' + https%3A%2F%2Funder2.cn%2F2020%2F12%2F11%2FZookeeper-zookeeper%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://under2.cn/2020/12/11/Zookeeper-zookeeper/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="undertow" />
+
+    <!--  统计鸟  -->
+  <script type="text/javascript" src="//api.tongjiniao.com/c?_=648949077803503616" async></script>
+
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
+  
+  <meta name="description" content="description" />
+  
+  
+  
+  <title>
+    
+      Redis补充（数据类型以及使用场景） 
+      
+      
+      |
+    
+     undertow
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/dragon.png">
+    <link rel="icon" href="/images/dragon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
+  
+    
+<link rel="stylesheet" href="/css/figcaption/mac-block.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
+
+  <!-- fancybox -->
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+<meta name="generator" content="Hexo 7.1.1"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/dragon.png" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">undertow</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          <a href="/tags/">Tags</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">Redis补充（数据类型以及使用场景）</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+          2022-09-22 22:46:53
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <blockquote>
+<p>之前对Redis写了很多文章了。其中Redis（二）介绍了数据类型和操作。</p>
+<p>这篇文章作为补充，并且侧重于是介绍一下每一种类型的使用场景</p>
+<p>具体操作这里就不一一列举了。可以查看或之前的博客或者去<a target="_blank" rel="noopener" href="https://www.runoob.com/redis/redis-commands.html">菜鸟网</a></p>
+</blockquote>
+<h2 id="规范"><a href="#规范" class="headerlink" title="规范"></a>规范</h2><p><strong>实际中如何给Key命名？</strong></p>
+<ul>
+<li>以业务名(或数据库名)为前缀(防止key冲突)，用冒号分隔，比如业务名:表名:id</li>
+<li>控制key的长度不能太长</li>
+<li>不要包含特殊字符：换行、双引号、空格等</li>
+</ul>
+<p><strong>Value不能太大</strong></p>
+<p>非字符串的bigkey，不要使用del删除，使用hscan、sscan、zscan方式渐进式删除，同时要注意防止bigkey过期时间自动删除问题(例如一个200万的zset设置1小时过期，会触发del操作，造成阻塞，Redis4.0支持了异步del）</p>
+<p>举例（这是hash类型）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hmset user:1 name tom age 19 favor football</span><br></pre></td></tr></table></figure>
+
+<p><strong>尽量均匀的设置过期时间</strong></p>
+<p>更多参考此博客：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/92633604">https://zhuanlan.zhihu.com/p/92633604</a></p>
+<h2 id="strings"><a href="#strings" class="headerlink" title="strings"></a>strings</h2><p>结构：简单的Key-Value形式，Value是一个字符串</p>
+<p>场景：</p>
+<p>String是最基本、常用的数据类型</p>
+<ul>
+<li>可以用来存储普通的、JSON等形式的字符串数据</li>
+<li>假如数据正好是一个整数，那么你可以使用 <code>incr</code>命令让他进行原子自增，或<code>decr</code>原子自减【注意小数是不行的】</li>
+</ul>
+<p>hash</p>
+<p>结构：Value是一个类似Map的结构</p>
+<p>容量：Redis 中每个 hash 可以存储 232 - 1 键值对（40多亿）</p>
+<p>场景：hash类型非常适合用来存储对象类的数据，假如在String里存储一个JSON格式的字符串来保存对象，在存入、取出时还需要来回转换。而hash更加直接快速，还可以动态的添加或删除”字段名”,更加灵活</p>
+<h2 id="list"><a href="#list" class="headerlink" title="list"></a>list</h2><p>结构：</p>
+<p>Redis中list的实现是一个双向链表，并不是数据。<code>lpush rpush</code>分别对应头插入和尾部插入。</p>
+<p>同样我们也可以选择<code>lpop rpop</code>来进行头部移出，和尾部移出。这样list的也就相当于<strong>队列</strong>或者<strong>栈</strong>了</p>
+<p>容量：一个列表最多可以包含 232 - 1 个元素 (4294967295, 每个列表超过40亿个元素)</p>
+<p>场景：</p>
+<ol>
+<li>消息队列</li>
+</ol>
+<p>list类型的lpop和rpush（或者反过来，lpush和rpop）能实现队列的功能，故而可以用Redis的list类型实现简单的点对点的消息队列。不过我不推荐在实战中这么使用，因为现在已经有Kafka、NSQ、RabbitMQ等成熟的消息队列了，它们的功能已经很完善了，除非是为了更深入地理解消息队列，不然我觉得没必要去重复造轮子。</p>
+<p> 　2. 排行榜</p>
+<p>list类型的lrange命令可以分页查看队列中的数据。可将每隔一段时间计算一次的排行榜存储在list类型中，如京东每日的手机销量排行、学校每次月考学生的成绩排名、斗鱼主播排名等</p>
+<ol start="3">
+<li>最新列表</li>
+</ol>
+<p>　　list类型的lpush命令和lrange命令能实现最新列表的功能，每次通过lpush命令往列表里插入新的元素，然后通过lrange命令读取最新的元素列表，如朋友圈的点赞列表、评论列表。</p>
+<p>　　但是，并不是所有的最新列表都能用list类型实现，因为对于频繁更新的列表，list类型的分页可能导致列表元素重复或漏掉，举个例子，当前列表里由表头到表尾依次有（E，D，C，B，A）五个元素，每页获取3个元素，用户第一次获取到（E，D，C）三个元素，然后表头新增了一个元素F，列表变成了（F，E，D，C，B，A），此时用户取第二页拿到（C，B，A），元素C重复了。只有不需要分页（比如每次都只取列表的前5个元素）或者更新频率低（比如每天凌晨更新一次）的列表才适合用list类型实现。对于需要分页并且会频繁更新的列表，需用使用有序集合sorted set类型实现。另外，需要通过时间范围查找的最新列表，list类型也实现不了，也需要通过有序集合sorted set类型实现，如以成交时间范围作为条件来查询的订单列表。</p>
+<blockquote>
+<p>为何不直接使用sorted set？</p>
+<p>对于排行榜和最新列表两种应用场景，list类型能做到的sorted set类型都能做到，list类型做不到的sorted set类型也能做到，那为什么还要使用list类型去实现排行榜或最新列表呢，直接用sorted set类型不是更好吗？原因是sorted set类型占用的内存容量是list类型的数倍之多，对于列表数量不多的情况，可以用sorted set类型来实现，比如上文中举例的打擂金曲排行榜，每天全国只有一份，两种数据类型的内存容量差距可以忽略不计，但是如果要实现某首歌曲的翻唱作品地区排行榜，数百万的歌曲，300多个地区，会产生数量庞大的榜单，或者数量更加庞大的朋友圈点赞列表，就需要慎重地考虑容量的问题了</p>
+</blockquote>
+<h2 id="set"><a href="#set" class="headerlink" title="set"></a>set</h2><p>结构：</p>
+<ul>
+<li>是一个无序、不重复集合。若添加了一个重复的元素，则反回0（失败）</li>
+<li>提供了多个set之间的聚合运算：如何求交集、并集、差集等</li>
+<li>集合是通过哈希表实现的，所以添加，删除，查找的复杂度都是 O(1)。</li>
+</ul>
+<p>容量：集合中最大的成员数为 232 - 1 (4294967295, 每个集合可存储40多亿个成员)</p>
+<p>使用场景：</p>
+<ol>
+<li>好友&#x2F;关注&#x2F;粉丝&#x2F;感兴趣的人集合</li>
+</ol>
+<p>　　set类型唯一的特点使得其适合用于存储好友&#x2F;关注&#x2F;粉丝&#x2F;感兴趣的人集合，集合中的元素数量可能很多，每次全部取出来成本不小，set类型提供了一些很实用的命令用于直接操作这些集合，如</p>
+<p>　　　a. sinter命令可以获得A和B两个用户的共同好友</p>
+<p>　　   b. sismember命令可以判断A是否是B的好友</p>
+<p>   　　c. scard命令可以获取好友数量</p>
+<p>   　　d. 关注时，smove命令可以将B从A的粉丝集合转移到A的好友集合</p>
+<p>​		   f. sdiff 返回第一个集合与其他集合之间的差异。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#将ABCD存入集合 set1 中</span></span><br><span class="line">127.0.0.1:6379&gt; sadd set1 A B C D</span><br><span class="line">(<span class="built_in">integer</span>) 4</span><br><span class="line"><span class="comment">#将BD存入集合 set1 中</span></span><br><span class="line">127.0.0.1:6379&gt; sadd set2 B D</span><br><span class="line">(<span class="built_in">integer</span>) 2</span><br><span class="line"><span class="comment">#求set1 set2交集</span></span><br><span class="line">127.0.0.1:6379&gt; sinter set1 set2</span><br><span class="line">1) <span class="string">&quot;D&quot;</span></span><br><span class="line">2) <span class="string">&quot;B&quot;</span></span><br><span class="line"><span class="comment">#---</span></span><br><span class="line"><span class="comment">#Redis Sdiff 命令返回第一个集合与其他集合之间的差异，</span></span><br><span class="line"><span class="comment">#也可以认为说第一个集合中独有的元素。不存在的集合 key 将视为空集</span></span><br><span class="line"><span class="comment">#---</span></span><br><span class="line"><span class="comment">#求set1 与 set2的差集</span></span><br><span class="line">127.0.0.1:6379&gt; sdiff set1 set2</span><br><span class="line">1) <span class="string">&quot;A&quot;</span></span><br><span class="line">2) <span class="string">&quot;C&quot;</span></span><br><span class="line"><span class="comment">#求set2 与 set1的差集</span></span><br><span class="line">127.0.0.1:6379&gt; sdiff set2 set1</span><br><span class="line">(empty list or <span class="built_in">set</span>)</span><br><span class="line"><span class="comment">#判断A 是否在结合set1中</span></span><br><span class="line">127.0.0.1:6379&gt; sismember set1 A</span><br><span class="line">(<span class="built_in">integer</span>) 1</span><br></pre></td></tr></table></figure>
+
+<p>　　需要注意的是，如果你用的是Redis Cluster集群，对于sinter、smove这种操作多个key的命令，要求这两个key必须存储在同一个slot（槽位）中，否则会报出 (error) CROSSSLOT Keys in request don’t hash to the same slot 错误。Redis Cluster一共有16384个slot，每个key都是通过哈希算法CRC16(key)获取数值哈希，再模16384来定位slot的。要使得两个key处于同一slot，除了两个key一模一样，还有没有别的方法呢？答案是肯定的，Redis提供了一种<strong>Hash Tag</strong>的功能，在key中使用{}括起key中的一部分，在进行 CRC16(key) mod 16384 的过程中，只会对{}内的字符串计算，例如friend_set:{123456}和fans_set:{123456}，分别表示用户123456的好友集合和粉丝集合，在定位slot时，只对{}内的123456进行计算，所以这两个集合肯定是在同一个slot内的，当用户123456关注某个粉丝时，就可以通过smove命令将这个粉丝从用户123456的粉丝集合移动到好友集合。相比于通过srem命令先将这个粉丝从粉丝集合中删除，再通过sadd命令将这个粉丝加到好友集合，smove命令的优势是它是原子性的，不会出现这个粉丝从粉丝集合中被删除，却没有加到好友集合的情况。然而，对于通过sinter获取共同好友而言，Hash Tag则无能为力，例如，要用sinter去获取用户123456和456789两个用户的共同好友，除非我们将key定义为{friend_set}:123456和{friend_set}:456789，否则不能保证两个key会处于同一个slot，但是如果真这样做的话，所有用户的好友集合都会堆积在同一个slot中，数据分布会严重不均匀，不可取，所以，****在实战中**使用Redis Cluster时，sinter这个命令其实是不适合作用于两个不同用户对应的集合的**（同理其它操作多个key的命令）。</p>
+<p> 　2. 随机展示</p>
+<p>　　通常，app首页的展示区域有限，但是又不能总是展示固定的内容，一种做法是先确定一批需要展示的内容，再从中随机获取。如下图所示，酷狗音乐K歌擂台赛当日的打擂歌曲共29首，首页随机展示5首；昨日打擂金曲共200首，首页随机展示30首。</p>
+<p>　　set类型适合存放所有需要展示的内容，而<code>srandmember</code>命令则可以从中随机获取几个。</p>
+<p> 　3. 黑名单&#x2F;白名单</p>
+<p>　　经常有业务出于安全性方面的考虑，需要设置用户黑名单、ip黑名单、设备黑名单等，set类型适合存储这些黑名单数据，<code>sismember</code>命令可用于判断用户、ip、设备是否处于黑名单之中。</p>
+<h2 id="sorted-set"><a href="#sorted-set" class="headerlink" title="sorted set"></a>sorted set</h2><p>与set一样是一个不重复的集合。区别是集合中每一个成员都会有一个分数。</p>
+<ul>
+<li>不同的是每个元素都会关联一个 double 类型的分数</li>
+<li>redis 正是通过分数来为sorted set集合中的成员进行从小到大的排序。</li>
+<li>有序集合的成员是唯一的,但分数(score)却可以重复</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#向zset1集合中 存入三个成员</span></span><br><span class="line">127.0.0.1:6379&gt; zadd zset1 100 xiaoming 50 red 10.6 green</span><br><span class="line">(<span class="built_in">integer</span>) 3</span><br><span class="line"><span class="comment">#查询0-2索引范围的数据 默认正序：从小到大</span></span><br><span class="line">127.0.0.1:6379&gt; zrange zset1 0 2</span><br><span class="line">1) <span class="string">&quot;green&quot;</span></span><br><span class="line">2) <span class="string">&quot;red&quot;</span></span><br><span class="line">3) <span class="string">&quot;xiaoming&quot;</span></span><br><span class="line"><span class="comment">#查询0-2索引范围的数据，倒叙 revrange-&gt; reverse range</span></span><br><span class="line">127.0.0.1:6379&gt; zrevrange zset1 0 2</span><br><span class="line">1) <span class="string">&quot;xiaoming&quot;</span></span><br><span class="line">2) <span class="string">&quot;red&quot;</span></span><br><span class="line">3) <span class="string">&quot;green&quot;</span></span><br><span class="line"><span class="comment">#查询某个成员的分数</span></span><br><span class="line">127.0.0.1:6379&gt; zscore zset1  green</span><br><span class="line"><span class="string">&quot;10.6&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>使用场景：</p>
+<p>带分数的排名：比如商品销量排名，游戏玩家积分排名等等</p>
+<h2 id="bitmap"><a href="#bitmap" class="headerlink" title="bitmap"></a>bitmap</h2><p>位图：当做是一个bit数组，我们向每一位来set设置0或1，也可以get</p>
+<p>场景：</p>
+<ul>
+<li>设置用户在线状态，所有用户用一个key，用户id作为offset</li>
+<li>用户签到情况，每一个用户作为一个bitmap的key</li>
+</ul>
+<h2 id="hyperLoglog"><a href="#hyperLoglog" class="headerlink" title="hyperLoglog"></a>hyperLoglog</h2><p>Redis HyperLogLog 是用来做基数统计的算法，HyperLogLog 的优点是，在输入元素的数量或者体积非常非常大时，计算基数所需的空间总是固定 的、并且是很小的。</p>
+<p>在 Redis 里面，每个 HyperLogLog 键只需要花费 12 KB 内存，就可以计算接近 2^64 个不同元素的基 数。这和计算基数时，元素越多耗费内存就越多的集合形成鲜明对比。</p>
+<p>但是，因为 HyperLogLog 只会根据输入元素来计算基数，而不会储存输入元素本身，所以 HyperLogLog 不能像集合那样，返回输入的各个元素。</p>
+<blockquote>
+<p>什么是基数?</p>
+<p>比如数据集 {1, 3, 5, 7, 5, 7, 8}， 那么这个数据集的基数集为 {1, 3, 5 ,7, 8}, 基数(不重复元素)为5。 基数估计就是在误差可接受的范围内，快速计算基数。</p>
+</blockquote>
+<h2 id="geo"><a href="#geo" class="headerlink" title="geo"></a>geo</h2><p>GEO即地址信息定位<br>可以用来存储经纬度，计算两地距离，范围计算等</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料:"></a>参考资料:</h2><ul>
+<li>Redis应用类型及应用场景 <a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000012212663?utm_source=tag-newest">https://segmentfault.com/a/1190000012212663?utm_source=tag-newest</a></li>
+<li>Redis实战经验 <a target="_blank" rel="noopener" href="https://www.cnblogs.com/pangzizhe/p/10674501.html">https://www.cnblogs.com/pangzizhe/p/10674501.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/renpingsheng/p/9783834.html">https://www.cnblogs.com/renpingsheng/p/9783834.html</a></li>
+</ul>
+<blockquote>
+</blockquote>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2021/01/05/%E7%AB%AF%E5%8F%A3%E5%8D%A0%E7%94%A8%E9%97%AE%E9%A2%98-%E7%AB%AF%E5%8F%A3%E5%8D%A0%E7%94%A8%E9%97%AE%E9%A2%98/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
+              2022-09-22 22:46:53
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2021/01/14/MYSQL%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B%EF%BC%88%E8%BD%AC%EF%BC%89-mysql%E6%89%A7%E8%A1%8C%E8%BF%87%E7%A8%8B%E8%BD%AC/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%84%E8%8C%83"><span class="toc-text">规范</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#strings"><span class="toc-text">strings</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#list"><span class="toc-text">list</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#set"><span class="toc-text">set</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#sorted-set"><span class="toc-text">sorted set</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#bitmap"><span class="toc-text">bitmap</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#hyperLoglog"><span class="toc-text">hyperLoglog</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#geo"><span class="toc-text">geo</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-text">参考资料:</span></a></li></ol>
+      
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/under-tow">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
+        </li>
+        
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/under-tow">Copyright © 2024 undertow</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
+    </div>
+  
+  
+  <div class="footer-views">
+      <span id="busuanzi_container_site_pv" style='display:none'>
+          共<span id="busuanzi_value_site_uv"></span>位伙伴访问了本站<span id="busuanzi_value_site_pv"></span>次
+      </span>
+  <div>
+</div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + Redis%E8%A1%A5%E5%85%85%EF%BC%88%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E4%BB%A5%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF%EF%BC%89 + '&url=' + https%3A%2F%2Funder2.cn%2F2021%2F01%2F08%2FRedis%25E8%25A1%25A5%25E5%2585%2585%25EF%25BC%2588%25E6%2595%25B0%25E6%258D%25AE%25E7%25B1%25BB%25E5%259E%258B%25E4%25BB%25A5%25E5%258F%258A%25E4%25BD%25BF%25E7%2594%25A8%25E5%259C%25BA%25E6%2599%25AF%25EF%25BC%2589-redis%25E8%25A1%25A5%25E5%2585%2585%25E6%2595%25B0%25E6%258D%25AE%25E7%25B1%25BB%25E5%259E%258B%25E4%25BB%25A5%25E5%258F%258A%25E4%25BD%25BF%25E7%2594%25A8%25E5%259C%25BA%25E6%2599%25AF%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=https://under2.cn/2021/01/08/Redis%E8%A1%A5%E5%85%85%EF%BC%88%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E4%BB%A5%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF%EF%BC%89-redis%E8%A1%A5%E5%85%85%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E4%BB%A5%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  </body>
+</html>
